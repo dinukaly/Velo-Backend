@@ -1,0 +1,12 @@
+package com.dinukaly.velo.dto;
+
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class AuthResponseDTO {
+    private String access_token;
+    private String email;
+}
