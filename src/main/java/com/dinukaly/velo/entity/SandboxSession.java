@@ -26,4 +26,18 @@ public class SandboxSession {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    // relationships
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, unique = true)
+    private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, unique = true)
+    private Project project;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = Instant.now();
+        active = true;
+    }
 }

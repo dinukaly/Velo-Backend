@@ -32,4 +32,24 @@ public class Project {
 
     @Column(nullable = false)
     private Instant updatedAt;
+
+    // owner relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private User owner;
+
+    // sandbox relationship
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL)
+    private SandboxSession sandboxSession;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = Instant.now();
+    }
 }

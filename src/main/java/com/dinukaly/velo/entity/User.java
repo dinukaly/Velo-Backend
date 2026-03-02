@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -27,12 +29,35 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @Column(nullable = false)
     private boolean enabled;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    //relationships
+    // relationships
 
+    @OneToMany(
+            mappedBy = "owner",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Project> projects = new ArrayList<>();
+
+    @OneToOne(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private SandboxSession sandboxSession;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = Instant.now();
+        enabled = true;
+    }
 }
