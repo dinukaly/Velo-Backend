@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getId());
+        String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponseDTO(token);
     }
 
