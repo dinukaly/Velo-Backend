@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -16,15 +15,16 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expirationTime;
 
-    public String generateToken(UUID userId){
+    public String generateToken(String email){
         return Jwts.builder()
-                .setSubject(userId.toString())
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(Keys.hmacShaKeyFor(secretKey.getBytes())
                 ,SignatureAlgorithm.HS256).compact();
     }
 
+    //need an upgrade
     public boolean validateToken(String token){
         try {
             Jwts.parserBuilder()
@@ -36,7 +36,8 @@ public class JwtUtil {
             return false;
         }
     }
-    public String getUsernameFromToken(String token){
+    //change the name
+    public String getEmailFromToken(String token){
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
