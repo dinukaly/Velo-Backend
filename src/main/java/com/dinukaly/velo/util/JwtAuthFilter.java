@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
         //extract token from header
         jwtToken = tokenHeader.substring(7);
-        username = jwtUtil.getUsernameFromToken(jwtToken);
+        username = jwtUtil.getEmailFromToken(jwtToken);
         //find authentication object in security context holder
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             //create authentication object
