@@ -19,9 +19,9 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService(){
-        return username -> userRepository.findByUsername(username)
+        return email -> userRepository.findByEmail(email)
                 .map(user -> new org.springframework.security.core.userdetails.User(
-                        user.getUsername(),
+                        user.getEmail(),
                         user.getPasswordHash(),
                         List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                 ))
