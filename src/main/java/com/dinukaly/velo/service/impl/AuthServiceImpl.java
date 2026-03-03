@@ -29,19 +29,16 @@ public class AuthServiceImpl implements AuthService {
         if(userRepository.existsByEmail(registerRequestDTO.getEmail())){
             throw new RuntimeException("Email Already Exists");
         }
-        if (userRepository.existsByUsername(registerRequestDTO.getUsername())) {
-            throw new RuntimeException("Username Already Exists");
-        }
         User user = User.builder()
                 .email(registerRequestDTO.getEmail())
-                .username(registerRequestDTO.getUsername())
+                .name(registerRequestDTO.getName())
                 .passwordHash(passwordEncoder.encode(registerRequestDTO.getPassword()))
                 .role(Role.USER)
                 .enabled(true)
                 .build();
 
         userRepository.save(user);
-        log.info("User {} has been registered", user.getUsername());
+        log.info("User {} has been registered", user.getName());
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponseDTO(token);
     }

@@ -21,7 +21,7 @@ public class AuthController {
         return ResponseEntity.ok(
                 new APIResponse(
                         200,
-                        "User " + registerRequestDTO.getUsername() + " has been registered",
+                        "User " + registerRequestDTO.getName() + " has been registered",
                         authService.register(registerRequestDTO)
                 )
         );
