@@ -21,7 +21,7 @@ public class Project {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 500)
+    @Column(length = 500, nullable = false)
     private String description;
 
     @Column(nullable = false, length = 30)
