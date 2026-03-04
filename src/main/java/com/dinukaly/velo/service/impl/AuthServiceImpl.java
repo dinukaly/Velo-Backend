@@ -39,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
         log.info("User {} has been registered", user.getName());
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user);
         return new AuthResponseDTO(token);
     }
 
@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Password Do Not Match");
         }
         //generate token
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user);
         return new AuthResponseDTO(token);
     }
 }

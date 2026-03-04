@@ -1,5 +1,6 @@
 package com.dinukaly.velo.util;
 
+import com.dinukaly.velo.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -15,9 +16,9 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expirationTime;
 
-    public String generateToken(String email){
+    public String generateToken(User user){
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(Keys.hmacShaKeyFor(secretKey.getBytes())
