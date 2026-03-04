@@ -24,20 +24,21 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+
     @Override
-    public ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO,String email) {
+    public ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO, String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         log.info("Creating project: {} for user: {}", createProjectRequestDTO,email);
         Project project = Project.builder()
                 .name(createProjectRequestDTO.getName())
-                .language("Js")
+                .description(createProjectRequestDTO.getDescription())
+                .language(createProjectRequestDTO.getLanguage())
                 .owner(user)
                 .build();
 
         projectRepository.save(project);
         return modelMapper.map(project, ProjectResponseDTO.class);
     }
-
 
 
     @Override
