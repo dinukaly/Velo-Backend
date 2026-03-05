@@ -9,5 +9,5 @@ import java.util.UUID;
 public interface ProjectService {
     ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO,String email);
     List<ProjectResponseDTO> listProjects(String email);
-    void deleteProject(UUID projectId);
+    void deleteProject(UUID projectId,String email);
 }
