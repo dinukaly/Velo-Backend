@@ -28,7 +28,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO, String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        log.info("Creating project: {} for user: {}", createProjectRequestDTO,email);
+        log.info("Creating project: {} for user: {}", createProjectRequestDTO, email);
         Project project = Project.builder()
                 .name(createProjectRequestDTO.getName())
                 .description(createProjectRequestDTO.getDescription())
@@ -50,7 +50,10 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void deleteProject(UUID projectId) {
-
+    public void deleteProject(UUID projectId, String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        Project project = projectRepository.findByIdAndOwner(projectId, user).orElseThrow(() -> new RuntimeException("Project not found"));
+        projectRepository.delete(project);
+        log.info("Project {} deleted by user: {}", projectId, email);
     }
 }

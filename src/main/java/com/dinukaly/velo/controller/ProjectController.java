@@ -9,6 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/v1/projects")
@@ -38,5 +40,17 @@ public class ProjectController {
                         "Project list retrieved successfully",
                 projectService.listProjects(userDetails.getUsername()))
         );
+    }
+
+    @DeleteMapping("/delete/{projectId}")
+    public ResponseEntity<APIResponse> delete(
+            @PathVariable UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        projectService.deleteProject(projectId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(
+                        200,
+                        "Project deleted successfully",
+                        null));
     }
 }
