@@ -19,11 +19,16 @@ public class FileNode {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
     @Column(nullable = false, length = 100)
     private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FileType type;
+
+    @Column(nullable = false)
+    private String path;
 
     // project relationship
     @ManyToOne(fetch = FetchType.LAZY)
