@@ -21,6 +21,7 @@ public class FileNode {
     private UUID id;
     @Column(nullable = false, length = 100)
     private String name;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FileType type;
 
@@ -28,6 +29,10 @@ public class FileNode {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private FileNode parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileNode> children = new ArrayList<>();
