@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -41,6 +43,10 @@ public class Project {
     // sandbox relationship
     @OneToOne(mappedBy = "project", cascade = CascadeType.ALL)
     private SandboxSession sandboxSession;
+
+    // file nodes relationship
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FileNode> fileNodes = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
