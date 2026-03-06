@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Component
 public class FilePathResolver {
@@ -16,11 +19,21 @@ public class FilePathResolver {
     }
 
     public Path resolveNodePath(FileNode node) {
-        Path path = getProjectPath(node.getProject());
+        // collect names from node up to root
+        List<String> parts = new ArrayList<>();
         FileNode current = node;
         while (current != null) {
-            path = path.resolve(current.getName());
+            parts.add(current.getName());
             current = current.getParent();
+        }
+
+        // reverse so root comes first
+        Collections.reverse(parts);
+
+        // build path
+        Path path = getProjectPath(node.getProject());
+        for (String part : parts) {
+            path = path.resolve(part);
         }
         return path;
     }
