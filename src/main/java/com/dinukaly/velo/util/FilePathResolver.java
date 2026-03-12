@@ -2,6 +2,7 @@ package com.dinukaly.velo.util;
 
 import com.dinukaly.velo.entity.FileNode;
 import com.dinukaly.velo.entity.Project;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
@@ -9,13 +10,28 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class FilePathResolver {
-    private static final String WORKSPACE_ROOT = "C:/workspace";
 
-    public Path getProjectPath(Project project) {
-        return Paths.get(WORKSPACE_ROOT, "project-" + project.getId());
+    @Value("${workspace.root}")
+    private String workspaceRoot;
+
+    public Path getProjectWorkspacePath(UUID userId, UUID projectId) {
+        return Paths.get(workspaceRoot)
+                .resolve(userId.toString())
+                .resolve("project-" + projectId);
+    }
+
+    /**
+     *extracts IDs from the Project entity.
+     */
+    public Path getProjectWorkspacePath(Project project) {
+        return getProjectWorkspacePath(
+                project.getOwner().getId(),
+                project.getId()
+        );
     }
 
     public Path resolveNodePath(FileNode node) {
@@ -30,8 +46,8 @@ public class FilePathResolver {
         // reverse so root comes first
         Collections.reverse(parts);
 
-        // build path
-        Path path = getProjectPath(node.getProject());
+        // build path starting from the project workspace
+        Path path = getProjectWorkspacePath(node.getProject());
         for (String part : parts) {
             path = path.resolve(part);
         }
