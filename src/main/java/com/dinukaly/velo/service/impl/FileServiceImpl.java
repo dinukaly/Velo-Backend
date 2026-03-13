@@ -110,7 +110,15 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileContentResponseDTO readFile(UUID nodeId) {
-        return null;
+        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
+        Path path = filePathResolver.resolveNodePath(node);
+        String content = fileStorageService.readFile(path);
+
+        return FileContentResponseDTO.builder()
+                .nodeId(nodeId)
+                .name(node.getName())
+                .content(content)
+                .build();
     }
 
     @Override
