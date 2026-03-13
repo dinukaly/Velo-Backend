@@ -123,7 +123,12 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void writeFile(WriteFileRequestDTO writeFileRequestDTO, String email) {
-
+        FileNode node = fileNodeRepository.findById(writeFileRequestDTO.getNodeId()).orElseThrow(() -> new RuntimeException("Node not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        validateOwnership(node.getProject(), user);
+        Path path = filePathResolver.resolveNodePath(node);
+        fileStorageService.writeFile(path, writeFileRequestDTO.getContent());
+        log.info("File written: {}", writeFileRequestDTO.getNodeId());
     }
 
     //validate ownership
