@@ -39,10 +39,10 @@ public class GlobalExceptionHandler {
     }
     // Exception Handler for all other exceptions
     @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public APIResponse handleAllExceptions(RuntimeException ex) {
         return new APIResponse(
-                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
                 null
         );
