@@ -87,7 +87,16 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileNodeResponseDTO rename(UUID nodeId, String newName, String email) {
-        return null;
+            FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+            validateOwnership(node.getProject(), user);
+            Path oldPath = filePathResolver.resolveNodePath(node);
+            node.setName(newName);
+            Path newPath = filePathResolver.resolveNodePath(node);
+            fileStorageService.rename(oldPath, newPath);
+            fileNodeRepository.save(node);
+            log.info("Node renamed to: {}", newName);
+            return modelMapper.map(node, FileNodeResponseDTO.class);
     }
 
     @Override
