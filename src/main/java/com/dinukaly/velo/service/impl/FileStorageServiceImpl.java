@@ -61,7 +61,12 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void rename(Path oldPath, Path newPath) {
-
+        try {
+            Files.move(oldPath, newPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.error("Failed to rename {} to {}", oldPath, newPath, e);
+            throw new UncheckedIOException("Could not rename: " + oldPath, e);
+        }
     }
 
     @Override
