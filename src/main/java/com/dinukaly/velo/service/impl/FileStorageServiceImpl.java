@@ -83,6 +83,13 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void writeFile(Path path, String content) {
+        try {
+            if (path.getParent() != null) Files.createDirectories(path.getParent());
+            Files.writeString(path, content);
+        } catch (IOException e) {
+            log.error("Failed to write to file: {}", path, e);
+            throw new UncheckedIOException("Could not write file: " + path, e);
+        }
 
     }
 }
