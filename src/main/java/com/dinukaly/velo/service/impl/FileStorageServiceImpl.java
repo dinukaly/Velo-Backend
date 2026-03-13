@@ -71,7 +71,14 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String readFile(Path path) {
-        return "";
+        try {
+            if (!Files.exists(path)) return "";
+            return Files.readString(path);
+        } catch (IOException e) {
+            log.error("Failed to read file: {}", path, e);
+            throw new UncheckedIOException("Could not read file: " + path, e);
+        }
+
     }
 
     @Override
