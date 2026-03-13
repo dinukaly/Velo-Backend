@@ -76,7 +76,13 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void delete(UUID nodeId, String email) {
-
+        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        validateOwnership(node.getProject(), user);
+        Path path = filePathResolver.resolveNodePath(node);
+        fileStorageService.delete(path);
+        fileNodeRepository.delete(node);
+        log.info("Node deleted: {}", nodeId);
     }
 
     @Override
