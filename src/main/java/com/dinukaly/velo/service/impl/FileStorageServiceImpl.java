@@ -50,6 +50,12 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void delete(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.error("Failed to delete: {}", path, e);
+            throw new UncheckedIOException("Could not delete path: " + path, e);
+        }
 
     }
 
