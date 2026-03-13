@@ -65,7 +65,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileNodeResponseDTO rename(RenameRequestDTO renameRequestDTO, String newName) {
+    public FileNodeResponseDTO rename(UUID nodeId, String newName, String email) {
         return null;
     }
 

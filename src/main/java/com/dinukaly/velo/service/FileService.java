@@ -12,7 +12,7 @@ public interface FileService {
 
     void delete(UUID nodeId, String email);
 
-    FileNodeResponseDTO rename(RenameRequestDTO renameRequestDTO, String newName);
+    FileNodeResponseDTO rename(UUID nodeId, String newName, String email);
 
     List<FileNodeResponseDTO> getProjectTree(UUID projectId);
 
