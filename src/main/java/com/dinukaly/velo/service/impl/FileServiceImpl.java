@@ -56,7 +56,22 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileNodeResponseDTO createFolder(CreateFolderRequestDTO createFolderRequestDTO, String email) {
-        return null;
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        Project project = projectRepository.findById(createFolderRequestDTO.getProjectId()).orElseThrow(() -> new RuntimeException("Project not found"));
+        validateOwnership(project, user);
+        log.info("Creating folder: {} in project: {} for user: {}", createFolderRequestDTO.getName(), project.getId(), email);
+        FileNode parent = resolveParent(createFolderRequestDTO.getParentId());
+        FileNode fileNode = FileNode.builder()
+                .name(createFolderRequestDTO.getName())
+                .type(FileType.FOLDER)
+                .project(project)
+                .parent(parent)
+                .build();
+        fileNodeRepository.save(fileNode);
+        log.info("Folder created: {}", fileNode);
+        Path path = filePathResolver.resolveNodePath(fileNode);
+        fileStorageService.createFolder(path);
+        return modelMapper.map(fileNode, FileNodeResponseDTO.class);
     }
 
     @Override
