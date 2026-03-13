@@ -41,7 +41,19 @@ public class ProjectController {
                 projectService.listProjects(userDetails.getUsername()))
         );
     }
+    @GetMapping("/{projectId}")
+    public ResponseEntity<APIResponse> getProject(
+            @PathVariable UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
+        return ResponseEntity.ok(
+                new APIResponse(
+                        200,
+                        "Project retrieved successfully",
+                        projectService.getProjectById(projectId, userDetails.getUsername())
+                )
+        );
+    }
     @DeleteMapping("/delete/{projectId}")
     public ResponseEntity<APIResponse> delete(
             @PathVariable UUID projectId,
