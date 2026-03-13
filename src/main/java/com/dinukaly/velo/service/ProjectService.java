@@ -10,4 +10,5 @@ public interface ProjectService {
     ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO,String email);
     List<ProjectResponseDTO> listProjects(String email);
     void deleteProject(UUID projectId,String email);
+    ProjectResponseDTO getProjectById(UUID projectId,String email);
 }

@@ -77,4 +77,13 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.delete(project);
         log.info("Project {} deleted by user: {}", projectId, email);
     }
+
+    @Override
+    public ProjectResponseDTO getProjectById(UUID projectId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Project project = projectRepository.findByIdAndOwner(projectId, user)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+        return modelMapper.map(project, ProjectResponseDTO.class);
+    }
 }
