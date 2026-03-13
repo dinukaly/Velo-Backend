@@ -101,7 +101,11 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<FileNodeResponseDTO> getProjectTree(UUID projectId) {
-        return List.of();
+        Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
+        List<FileNode> roots = fileNodeRepository.findByProjectAndParentIsNull(project);
+        return roots.stream()
+                .map(node -> modelMapper.map(node, FileNodeResponseDTO.class))
+                .toList();
     }
 
     @Override
