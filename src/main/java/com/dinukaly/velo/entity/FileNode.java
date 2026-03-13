@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "file_nodes")
+@Table(
+        name = "file_nodes",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"project_id","parent_id","name"})
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,9 +30,6 @@ public class FileNode {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FileType type;
-
-    @Column(nullable = false)
-    private String path;
 
     // project relationship
     @ManyToOne(fetch = FetchType.LAZY)

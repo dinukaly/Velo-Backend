@@ -11,4 +11,6 @@ public interface FileNodeRepository extends JpaRepository<FileNode, UUID> {
     List<FileNode> findByProject(Project project);
 
     List<FileNode> findByParent(FileNode parent);
+
+    List<FileNode> findByProjectAndParentIsNull(Project project);
 }
