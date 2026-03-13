@@ -28,7 +28,13 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void createFile(Path path) {
-
+        try {
+            if (path.getParent() != null) Files.createDirectories(path.getParent());
+            Files.createFile(path);
+        } catch (IOException e) {
+            log.error("Failed to create file: {}", path, e);
+            throw new UncheckedIOException("Could not create file: " + path, e);
+        }
     }
 
     @Override
