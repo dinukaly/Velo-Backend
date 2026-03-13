@@ -65,7 +65,7 @@ public class FileController {
         return ResponseEntity.ok(new APIResponse(
                 200,
                 "Node renamed successfully",
-                fileService.rename(dto, dto.getNewName())));
+                fileService.rename(nodeId, dto.getNewName(), userDetails.getUsername())));
     }
 
     // GET /api/v1/files/tree/{projectId} — fetch the project's full file tree
