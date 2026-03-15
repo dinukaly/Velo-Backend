@@ -7,9 +7,9 @@ import com.dinukaly.velo.entity.User;
 import com.dinukaly.velo.repo.ProjectRepository;
 import com.dinukaly.velo.repo.SandboxRepository;
 import com.dinukaly.velo.repo.UserRepository;
-import com.dinukaly.velo.sandbox.SandboxService;
 import com.dinukaly.velo.service.EnvironmentService;
 import com.dinukaly.velo.service.FileStorageService;
+import com.dinukaly.velo.service.SandboxService;
 import com.dinukaly.velo.util.FilePathResolver;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -97,6 +97,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
     @Override
     public void closeEnvironment(UUID projectId, String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
+        Project project = projectRepository.findByIdAndOwner(projectId, user)
+                .orElseThrow(() -> new RuntimeException("Project not found or access denied: " + projectId));
+
+        sandboxRepository.findByProject(project).ifPresent(session -> {
+            sandboxService.stopContainer(session.getContainerId());
+            sandboxRepository.delete(session);
+            log.info("Environment closed for project [{}]", projectId);
+        });
     }
 }
