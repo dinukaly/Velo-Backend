@@ -96,6 +96,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     }
 
     @Override
+    @Transactional
     public void closeEnvironment(UUID projectId, String username) {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
@@ -106,6 +107,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         sandboxRepository.findByProject(project).ifPresent(session -> {
             sandboxService.stopContainer(session.getContainerId());
             sandboxRepository.delete(session);
+
             log.info("Environment closed for project [{}]", projectId);
         });
     }
