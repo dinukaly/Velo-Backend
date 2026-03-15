@@ -1,7 +1,7 @@
 package com.dinukaly.velo.controller;
 
 import com.dinukaly.velo.dto.APIResponse;
-import com.dinukaly.velo.environment.EnvironmentService;
+import com.dinukaly.velo.service.EnvironmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +30,22 @@ public class EnvironmentController {
                 200,
                 "Environment started successfully",
                 environmentService.prepareEnvironment(projectId, userDetails.getUsername())
+        ));
+    }
+
+    /**
+     * DELETE /api/v1/environment/close/{projectId}
+     */
+    @DeleteMapping("/close/{projectId}")
+    public ResponseEntity<APIResponse> closeEnvironment(
+            @PathVariable UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        environmentService.closeEnvironment(projectId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "Environment stopped successfully",
+                null
         ));
     }
 }
