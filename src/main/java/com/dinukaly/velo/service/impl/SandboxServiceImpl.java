@@ -52,7 +52,23 @@ public class SandboxServiceImpl implements SandboxService {
 
     @Override
     public void stopContainer(String containerId) {
+        log.info("Stopping sandbox container: {}", containerId);
+        try {
+            // Check if container exists
+            try {
+                dockerClient.inspectContainerCmd(containerId).exec();
+            } catch (com.github.dockerjava.api.exception.NotFoundException e) {
+                log.info("Container {} no longer exists, skipping cleanup", containerId);
+                return;
+            }
 
+            // Stop and remove the container
+            dockerClient.stopContainerCmd(containerId).withTimeout(10).exec();
+            dockerClient.removeContainerCmd(containerId).withForce(true).exec();
+            log.info("Sandbox container stopped and removed: {}", containerId);
+        } catch (Exception e) {
+            log.warn("Error while stopping container {}: {}", containerId, e.getMessage());
+        }
     }
 
     @Override
