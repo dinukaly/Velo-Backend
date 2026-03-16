@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Volume;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,10 +70,5 @@ public class SandboxServiceImpl implements SandboxService {
         } catch (Exception e) {
             log.warn("Error while stopping container {}: {}", containerId, e.getMessage());
         }
-    }
-
-    @Override
-    public String executeCommand(String containerId, String command) {
-        return "";
     }
 }
