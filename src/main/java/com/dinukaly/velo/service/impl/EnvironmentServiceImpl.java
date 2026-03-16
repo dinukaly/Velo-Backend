@@ -39,7 +39,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found or access denied: " + projectId));
+                .orElseThrow(() -> new RuntimeException(
+                        "Project not found or access denied: " + projectId));
 
         // check if this project already has a session
         Optional<SandboxSession> projectSession = sandboxRepository.findByProject(project);
@@ -57,19 +58,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                     .build();
         }
 
-        //check if user has another active session
-        sandboxRepository.findByUser(user).ifPresent(sandboxSession -> {
-            log.info("Stopping previous session [{}]", sandboxSession.getId());
 
-            try {
-                sandboxService.stopContainer(sandboxSession.getContainerId());
-            } catch (Exception e) {
-                log.error("Failed to stop previous session [{}]: {}",
-                        sandboxSession.getId(), e.getMessage());
-            }
-            sandboxRepository.delete(sandboxSession);
-            sandboxRepository.flush();
-        });
 
         // Ensure workspace exist
         Path projectWorkspacePath = filePathResolver.getProjectWorkspacePath(project);
@@ -78,7 +67,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         // Start container
         String containerId = sandboxService.startContainer(projectWorkspacePath.toString());
 
-        //save session
+        // save session
         SandboxSession sandboxSession = SandboxSession.builder()
                 .containerId(containerId)
                 .project(project)
@@ -102,7 +91,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         Project project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElseThrow(() -> new RuntimeException("Project not found or access denied: " + projectId));
+                .orElseThrow(() -> new RuntimeException(
+                        "Project not found or access denied: " + projectId));
 
         sandboxRepository.findByProject(project).ifPresent(session -> {
             sandboxService.stopContainer(session.getContainerId());
