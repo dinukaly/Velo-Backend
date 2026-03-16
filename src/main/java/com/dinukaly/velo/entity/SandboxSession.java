@@ -27,8 +27,8 @@ public class SandboxSession {
     private Instant createdAt;
 
     // relationships
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private User user;
 
     @OneToOne(fetch = FetchType.LAZY)
