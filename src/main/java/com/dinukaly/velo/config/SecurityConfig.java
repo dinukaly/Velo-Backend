@@ -30,14 +30,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                        auth->
-                                auth.requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
+                        auth ->
+                                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                         .requestMatchers("/api/v1/auth/**").permitAll()
+                                        .requestMatchers("/api/projects/*/terminal").permitAll()
                                         .anyRequest().authenticated())
                 .sessionManagement(
-                        session->session
-                                .sessionCreationPolicy(
-                                        SessionCreationPolicy.STATELESS)
+                        session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
