@@ -48,12 +48,13 @@ public class User {
     )
     private List<Project> projects = new ArrayList<>();
 
-    @OneToOne(
+    @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private SandboxSession sandboxSession;
+
+    private List<SandboxSession> sandboxSessions = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
