@@ -48,17 +48,21 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         if (projectSession.isPresent()) {
             SandboxSession sandboxSession = projectSession.get();
 
-            log.info("Reusing existing container {} for project {}",
-                    sandboxSession.getContainerId(), projectId);
+            if (sandboxService.isContainerAvailable(sandboxSession.getContainerId())) {
+                log.info("Reusing existing container {} for project {}",
+                        sandboxSession.getContainerId(), projectId);
 
-            return EnvironmentResponseDTO.builder()
-                    .projectId(project.getId())
-                    .containerId(sandboxSession.getContainerId())
-                    .workspacePath("/workspace")
-                    .build();
+                return EnvironmentResponseDTO.builder()
+                        .projectId(project.getId())
+                        .containerId(sandboxSession.getContainerId())
+                        .workspacePath("/workspace")
+                        .build();
+            } else {
+                log.info("Container {} is no longer available. Recreating for project {}",
+                        sandboxSession.getContainerId(), projectId);
+                sandboxRepository.delete(sandboxSession);
+            }
         }
-
-
 
         // Ensure workspace exist
         Path projectWorkspacePath = filePathResolver.getProjectWorkspacePath(project);

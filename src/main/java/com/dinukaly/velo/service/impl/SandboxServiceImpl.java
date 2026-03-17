@@ -3,6 +3,7 @@ package com.dinukaly.velo.service.impl;
 import com.dinukaly.velo.service.SandboxService;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.HostConfig;
@@ -69,6 +70,28 @@ public class SandboxServiceImpl implements SandboxService {
             log.info("Sandbox container stopped and removed: {}", containerId);
         } catch (Exception e) {
             log.warn("Error while stopping container {}: {}", containerId, e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean isContainerAvailable(String containerId) {
+        log.info("Checking availability for container: {}", containerId);
+        try {
+            InspectContainerResponse response = dockerClient.inspectContainerCmd(containerId).exec();
+            if (Boolean.TRUE.equals(response.getState().getRunning())) {
+                log.info("Container {} is already running", containerId);
+                return true;
+            } else {
+                log.info("Container {} exists but is stopped. Starting it...", containerId);
+                dockerClient.startContainerCmd(containerId).exec();
+                return true;
+            }
+        } catch (com.github.dockerjava.api.exception.NotFoundException e) {
+            log.info("Container {} no longer exists", containerId);
+            return false;
+        } catch (Exception e) {
+            log.warn("Error checking or starting container {}: {}", containerId, e.getMessage());
+            return false;
         }
     }
 }
