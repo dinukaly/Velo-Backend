@@ -45,7 +45,8 @@ public class AIController {
                 request.getMessage(),
                 fileContent,
                 request.getSelectedCode(),
-                node.getName()
+                node.getName(),
+                request.getHistory()
         );
 
         // Send to AI and get response

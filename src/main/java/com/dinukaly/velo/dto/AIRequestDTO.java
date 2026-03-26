@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -23,4 +24,16 @@ public class AIRequestDTO {
     private UUID fileId;
 
     private String selectedCode;
+
+    private List<ChatHistoryMessage> history;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ChatHistoryMessage {
+        @NotBlank
+        private String role;
+        @NotBlank
+        private String content;
+    }
 }

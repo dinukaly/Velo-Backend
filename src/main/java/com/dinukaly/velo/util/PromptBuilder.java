@@ -1,6 +1,8 @@
 package com.dinukaly.velo.util;
 
+import com.dinukaly.velo.dto.AIRequestDTO;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class PromptBuilder {
@@ -17,10 +19,19 @@ public class PromptBuilder {
             - If you are unsure, say so rather than guessing.
             """;
 
-    public String buildPrompt(String userMessage, String fileContent, String selectedCode, String filePath) {
+    public String buildPrompt(String userMessage, String fileContent, String selectedCode, String filePath, List<AIRequestDTO.ChatHistoryMessage> history) {
         StringBuilder prompt = new StringBuilder();
 
         prompt.append(SYSTEM_INSTRUCTIONS).append("\n");
+
+        // History context
+        if (history != null && !history.isEmpty()) {
+            prompt.append("--- RECENT CONVERSATION HISTORY ---\n");
+            for (AIRequestDTO.ChatHistoryMessage msg : history) {
+                prompt.append(msg.getRole().toUpperCase()).append(": ").append(msg.getContent()).append("\n");
+            }
+            prompt.append("--- END OF HISTORY ---\n\n");
+        }
 
         // File context
         if (fileContent != null && !fileContent.isBlank()) {
@@ -37,7 +48,7 @@ public class PromptBuilder {
         }
 
         // User message
-        prompt.append("USER REQUEST:\n");
+        prompt.append("NEW USER REQUEST:\n");
         prompt.append(userMessage);
 
         return prompt.toString();
