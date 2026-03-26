@@ -3,6 +3,8 @@ package com.dinukaly.velo.controller;
 import com.dinukaly.velo.dto.AIRequestDTO;
 import com.dinukaly.velo.dto.AIResponseDTO;
 import com.dinukaly.velo.dto.APIResponse;
+import com.dinukaly.velo.entity.FileNode;
+import com.dinukaly.velo.repo.FileNodeRepository;
 import com.dinukaly.velo.service.AIService;
 import com.dinukaly.velo.service.ContextService;
 import com.dinukaly.velo.util.PromptBuilder;
@@ -22,16 +24,20 @@ public class AIController {
     private final AIService aiService;
     private final ContextService contextService;
     private final PromptBuilder promptBuilder;
+    private final FileNodeRepository fileNodeRepository;
 
     @PostMapping("/chat")
     public ResponseEntity<APIResponse> chat(@Valid @RequestBody AIRequestDTO request) {
-        log.info("AI chat request for project: {}, file: {}",
-                request.getProjectId(), request.getCurrentFilePath());
+        log.info("AI chat request for project: {}, fileID: {}",
+                request.getProjectId(), request.getFileId());
+
+        FileNode node = fileNodeRepository.findById(request.getFileId())
+                .orElseThrow(() -> new RuntimeException("File not found: " + request.getFileId()));
 
         // Read the current file content from disk
         String fileContent = contextService.getFileContent(
                 request.getProjectId(),
-                request.getCurrentFilePath()
+                request.getFileId()
         );
 
         //  Build structured prompt
@@ -39,7 +45,7 @@ public class AIController {
                 request.getMessage(),
                 fileContent,
                 request.getSelectedCode(),
-                request.getCurrentFilePath()
+                node.getName()
         );
 
         // Send to AI and get response

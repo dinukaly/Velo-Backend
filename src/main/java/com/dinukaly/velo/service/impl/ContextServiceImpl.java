@@ -1,7 +1,7 @@
 package com.dinukaly.velo.service.impl;
 
-import com.dinukaly.velo.entity.Project;
-import com.dinukaly.velo.repo.ProjectRepository;
+import com.dinukaly.velo.entity.FileNode;
+import com.dinukaly.velo.repo.FileNodeRepository;
 import com.dinukaly.velo.service.ContextService;
 import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
@@ -18,23 +18,22 @@ import java.util.UUID;
 @Slf4j
 public class ContextServiceImpl implements ContextService {
 
-    private final ProjectRepository projectRepository;
+    private final FileNodeRepository fileNodeRepository;
     private final FilePathResolver filePathResolver;
 
     @Override
-    public String getFileContent(UUID projectId, String filePath) {
+    public String getFileContent(UUID projectId, UUID fileId) {
         try {
-            Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
-
-            Path projectRoot = filePathResolver.getProjectWorkspacePath(project);
-            Path resolvedPath = projectRoot.resolve(filePath).normalize();
+            FileNode node = fileNodeRepository.findById(fileId)
+                    .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
 
             // ensure AI reads only files within the project workspace
-            if (!resolvedPath.startsWith(projectRoot)) {
-                log.warn("Path traversal attempt blocked: {}", filePath);
-                return "";
+            if (!node.getProject().getId().equals(projectId)) {
+                 log.warn("Unauthorized file access attempt: project {} tried to access file {}", projectId, fileId);
+                 return "";
             }
+
+            Path resolvedPath = filePathResolver.resolveNodePath(node);
 
             if (!Files.exists(resolvedPath) || !Files.isRegularFile(resolvedPath)) {
                 log.warn("File does not exist or is not a regular file: {}", resolvedPath);
@@ -43,7 +42,7 @@ public class ContextServiceImpl implements ContextService {
 
             return Files.readString(resolvedPath);
         } catch (IOException e) {
-            log.error("Failed to read file content for AI context: {}", filePath, e);
+            log.error("Failed to read file content for AI context: {}", fileId, e);
             return "";
         }
     }

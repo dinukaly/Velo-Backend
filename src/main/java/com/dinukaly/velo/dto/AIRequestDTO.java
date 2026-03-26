@@ -19,8 +19,8 @@ public class AIRequestDTO {
     @NotNull(message = "Project ID is required")
     private UUID projectId;
 
-    @NotBlank(message = "Current file path is required")
-    private String currentFilePath;
+    @NotNull(message = "File ID is required")
+    private UUID fileId;
 
     private String selectedCode;
 }

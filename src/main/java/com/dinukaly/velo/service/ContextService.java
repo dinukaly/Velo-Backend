@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface ContextService {
 
-    String getFileContent(UUID projectId, String filePath);
+    String getFileContent(UUID projectId, UUID fileId);
 }
