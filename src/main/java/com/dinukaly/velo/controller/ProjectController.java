@@ -3,6 +3,7 @@ package com.dinukaly.velo.controller;
 import com.dinukaly.velo.dto.APIResponse;
 import com.dinukaly.velo.dto.CreateProjectRequestDTO;
 import com.dinukaly.velo.service.ProjectService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +22,7 @@ public class ProjectController {
 
     @PostMapping("/create")
     public ResponseEntity<APIResponse> create(
-            @RequestBody CreateProjectRequestDTO requestDTO,
+            @Valid @RequestBody CreateProjectRequestDTO requestDTO,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(new APIResponse(

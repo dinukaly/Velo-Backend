@@ -2,6 +2,7 @@ package com.dinukaly.velo.controller;
 
 import com.dinukaly.velo.dto.*;
 import com.dinukaly.velo.service.FileService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +22,7 @@ public class FileController {
     // POST /api/v1/files/file — create a new file node
     @PostMapping("/file")
     public ResponseEntity<APIResponse> createFile(
-            @RequestBody CreateFileRequestDTO dto,
+            @Valid @RequestBody CreateFileRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(new APIResponse(
@@ -33,7 +34,7 @@ public class FileController {
     // POST /api/v1/files/folder — create a new folder node
     @PostMapping("/folder")
     public ResponseEntity<APIResponse> createFolder(
-            @RequestBody CreateFolderRequestDTO dto,
+            @Valid @RequestBody CreateFolderRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(new APIResponse(
@@ -59,7 +60,7 @@ public class FileController {
     @PatchMapping("/{nodeId}/rename")
     public ResponseEntity<APIResponse> rename(
             @PathVariable UUID nodeId,
-            @RequestBody RenameRequestDTO dto,
+            @Valid @RequestBody RenameRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(new APIResponse(
@@ -93,7 +94,7 @@ public class FileController {
     // PUT /api/v1/files/content — write (save) content to a file
     @PutMapping("/content")
     public ResponseEntity<APIResponse> writeFile(
-            @RequestBody WriteFileRequestDTO dto,
+            @Valid @RequestBody WriteFileRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         fileService.writeFile(dto, userDetails.getUsername());

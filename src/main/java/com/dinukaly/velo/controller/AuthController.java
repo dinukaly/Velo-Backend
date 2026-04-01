@@ -5,6 +5,7 @@ import com.dinukaly.velo.dto.AuthDTO;
 import com.dinukaly.velo.dto.AuthResponseDTO;
 import com.dinukaly.velo.dto.RegisterRequestDTO;
 import com.dinukaly.velo.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<APIResponse> signup(@RequestBody RegisterRequestDTO registerRequestDTO) {
+    public ResponseEntity<APIResponse> signup(@Valid @RequestBody RegisterRequestDTO registerRequestDTO) {
         return ResponseEntity.ok(
                 new APIResponse(
                         200,
@@ -28,7 +29,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<APIResponse> signin(@RequestBody AuthDTO authDTO) {
+    public ResponseEntity<APIResponse> signin(@Valid @RequestBody AuthDTO authDTO) {
         return ResponseEntity.ok(
                 new APIResponse(
                         200,
