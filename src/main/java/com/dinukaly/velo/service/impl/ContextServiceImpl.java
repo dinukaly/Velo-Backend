@@ -7,6 +7,7 @@ import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import com.dinukaly.velo.exception.NotFoundException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +26,7 @@ public class ContextServiceImpl implements ContextService {
     public String getFileContent(UUID projectId, UUID fileId) {
         try {
             FileNode node = fileNodeRepository.findById(fileId)
-                    .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
+                    .orElseThrow(() -> new NotFoundException("File not found: " + fileId));
 
             // ensure AI reads only files within the project workspace
             if (!node.getProject().getId().equals(projectId)) {

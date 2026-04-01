@@ -13,6 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.dinukaly.velo.exception.CustomAuthenticationException;
+import com.dinukaly.velo.exception.DuplicateResourceException;
+import com.dinukaly.velo.exception.NotFoundException;
+
 import java.util.UUID;
 
 @Service
@@ -27,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponseDTO register(RegisterRequestDTO registerRequestDTO) {
 
         if(userRepository.existsByEmail(registerRequestDTO.getEmail())){
-            throw new RuntimeException("Email Already Exists");
+            throw new DuplicateResourceException("Email Already Exists");
         }
         User user = User.builder()
                 .email(registerRequestDTO.getEmail())
@@ -46,11 +50,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponseDTO authenticate(AuthDTO authDTO) {
         User user = userRepository.findByEmail(authDTO.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email Not Found"));
+                .orElseThrow(() -> new NotFoundException("Email Not Found"));
 
         //validate password
         if (!passwordEncoder.matches(authDTO.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Password Do Not Match");
+            throw new CustomAuthenticationException("Password Do Not Match");
         }
         //generate token
         String token = jwtUtil.generateToken(user);

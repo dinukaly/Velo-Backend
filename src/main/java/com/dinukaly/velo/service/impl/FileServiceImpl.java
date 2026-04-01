@@ -14,6 +14,8 @@ import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import com.dinukaly.velo.exception.CustomAuthenticationException;
+import com.dinukaly.velo.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -34,8 +36,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileNodeResponseDTO createFile(CreateFileRequestDTO createFileRequestDTO, String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        Project project = projectRepository.findById(createFileRequestDTO.getProjectId()).orElseThrow(() -> new RuntimeException("Project not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
+        Project project = projectRepository.findById(createFileRequestDTO.getProjectId()).orElseThrow(() -> new NotFoundException("Project not found"));
 
         validateOwnership(project, user);
         log.info("Creating file: {} in project: {} for user: {}", createFileRequestDTO.getName(), project.getId(), email);
@@ -56,8 +58,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileNodeResponseDTO createFolder(CreateFolderRequestDTO createFolderRequestDTO, String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        Project project = projectRepository.findById(createFolderRequestDTO.getProjectId()).orElseThrow(() -> new RuntimeException("Project not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
+        Project project = projectRepository.findById(createFolderRequestDTO.getProjectId()).orElseThrow(() -> new NotFoundException("Project not found"));
         validateOwnership(project, user);
         log.info("Creating folder: {} in project: {} for user: {}", createFolderRequestDTO.getName(), project.getId(), email);
         FileNode parent = resolveParent(createFolderRequestDTO.getParentId());
@@ -76,8 +78,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void delete(UUID nodeId, String email) {
-        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new NotFoundException("Node not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
         validateOwnership(node.getProject(), user);
         Path path = filePathResolver.resolveNodePath(node);
         fileStorageService.delete(path);
@@ -87,8 +89,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileNodeResponseDTO rename(UUID nodeId, String newName, String email) {
-            FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
-            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+            FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new NotFoundException("Node not found"));
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
             validateOwnership(node.getProject(), user);
             Path oldPath = filePathResolver.resolveNodePath(node);
             node.setName(newName);
@@ -101,7 +103,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<FileNodeResponseDTO> getProjectTree(UUID projectId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
+        Project project = projectRepository.findById(projectId).orElseThrow(() -> new NotFoundException("Project not found"));
         List<FileNode> roots = fileNodeRepository.findByProjectAndParentIsNull(project);
         return roots.stream()
                 .map(node -> modelMapper.map(node, FileNodeResponseDTO.class))
@@ -110,7 +112,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileContentResponseDTO readFile(UUID nodeId) {
-        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new RuntimeException("Node not found"));
+        FileNode node = fileNodeRepository.findById(nodeId).orElseThrow(() -> new NotFoundException("Node not found"));
         Path path = filePathResolver.resolveNodePath(node);
         String content = fileStorageService.readFile(path);
 
@@ -123,8 +125,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void writeFile(WriteFileRequestDTO writeFileRequestDTO, String email) {
-        FileNode node = fileNodeRepository.findById(writeFileRequestDTO.getNodeId()).orElseThrow(() -> new RuntimeException("Node not found"));
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        FileNode node = fileNodeRepository.findById(writeFileRequestDTO.getNodeId()).orElseThrow(() -> new NotFoundException("Node not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
         validateOwnership(node.getProject(), user);
         Path path = filePathResolver.resolveNodePath(node);
         fileStorageService.writeFile(path, writeFileRequestDTO.getContent());
@@ -134,13 +136,13 @@ public class FileServiceImpl implements FileService {
     //validate ownership
     private void validateOwnership(Project project, User user) {
         if (!project.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Unauthorized");
+            throw new CustomAuthenticationException("Unauthorized");
         }
     }
 
     private FileNode resolveParent(UUID parentId) {
         if (parentId == null) return null;
         return fileNodeRepository.findById(parentId)
-                .orElseThrow(() -> new RuntimeException("Parent folder not found"));
+                .orElseThrow(() -> new NotFoundException("Parent folder not found"));
     }
 }

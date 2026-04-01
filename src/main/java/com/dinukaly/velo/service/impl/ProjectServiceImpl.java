@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.dinukaly.velo.exception.NotFoundException;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -36,7 +37,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public ProjectResponseDTO createProject(CreateProjectRequestDTO createProjectRequestDTO, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         log.info("Creating project: {} for user: {}", createProjectRequestDTO, email);
 
@@ -63,7 +64,7 @@ public class ProjectServiceImpl implements ProjectService {
     public List<ProjectResponseDTO> listProjects(String email) {
         log.info("Listing projects for user: {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         List<Project> projects = projectRepository.findByOwner(user);
         return projects.stream()
                 .map(project -> modelMapper.map(project, ProjectResponseDTO.class))
@@ -74,10 +75,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void deleteProject(UUID projectId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Project project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new NotFoundException("Project not found"));
 
         // stop environment first
         environmentService.closeEnvironment(projectId, email);
@@ -95,9 +96,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponseDTO getProjectById(UUID projectId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         Project project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new NotFoundException("Project not found"));
         return modelMapper.map(project, ProjectResponseDTO.class);
     }
 }

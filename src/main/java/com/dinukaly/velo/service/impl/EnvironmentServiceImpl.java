@@ -11,6 +11,7 @@ import com.dinukaly.velo.service.EnvironmentService;
 import com.dinukaly.velo.service.FileStorageService;
 import com.dinukaly.velo.service.SandboxService;
 import com.dinukaly.velo.util.FilePathResolver;
+import com.dinukaly.velo.exception.NotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +37,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     @Transactional
     public EnvironmentResponseDTO prepareEnvironment(UUID projectId, String username) {
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new NotFoundException("User not found: " + username));
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new NotFoundException(
                         "Project not found or access denied: " + projectId));
 
         // check if this project already has a session
@@ -92,10 +93,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     @Transactional
     public void closeEnvironment(UUID projectId, String username) {
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new NotFoundException("User not found: " + username));
 
         Project project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new NotFoundException(
                         "Project not found or access denied: " + projectId));
 
         sandboxRepository.findByProject(project).ifPresent(session -> {
