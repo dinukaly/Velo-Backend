@@ -37,14 +37,19 @@ public class TerminalServiceImpl implements TerminalService {
                 .withAttachStdout(true)
                 .withAttachStderr(true)
                 .withTty(true)
-                .withCmd("sh")
+               // .withEnv("TERM=xterm-256color", "COLORTERM=truecolor")
+                .withCmd("sh", "-c",
+                        "export TERM=xterm-256color; " +
+                                "export COLORTERM=truecolor; " +
+                                "exec sh -l"
+                )
                 .exec();
 
         String execId = execResponse.getId();
         log.info("[TerminalService] Exec created: execId={}", execId);
 
         // Build a piped stdin
-        // PipedOutputStream is the write end we hand to the WS handler.
+        // PipedOutputStream is the write end that hand to the WS handler.
         // PipedInputStream is the read end the Docker SDK pulls from.
         PipedOutputStream stdinWrite = new PipedOutputStream();
         InputStream  stdinRead;
@@ -84,8 +89,7 @@ public class TerminalServiceImpl implements TerminalService {
 
         // Start the exec (non-blocking)
         // withStdIn pipes our PipedInputStream into the container's stdin.
-        // The .exec(callback) call returns immediately; output frames are
-        // delivered to callback.onNext() on the SDK thread pool.
+        // The .exec(callback) call returns immediately; output frames are delivered to callback.onNext() on the SDK thread pool.
         dockerClient
                 .execStartCmd(execId)
                 .withStdIn(stdinRead)
