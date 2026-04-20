@@ -8,9 +8,9 @@ import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.core.command.ExecStartResultCallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,22 +24,36 @@ public class SandboxServiceImpl implements SandboxService {
 
     private final DockerClient dockerClient;
 
+    @Value("${workspace.root}")
+    private String workspaceRoot;
+
     @Override
     public String startContainer(String workspacePath) {
         log.info("Starting sandbox container for workspace: {}", workspacePath);
 
+        //ensure the requested mount path is strictly inside the workspace root
+        java.nio.file.Path baseRoot = java.nio.file.Paths.get(workspaceRoot).toAbsolutePath().normalize();
+        java.nio.file.Path targetMount = java.nio.file.Paths.get(workspacePath).toAbsolutePath().normalize();
+
+        if (!targetMount.startsWith(baseRoot)) {
+            log.error("Security Sandbox Violation: Attempted to mount path outside workspace root. Target: {}, Root: {}", targetMount, baseRoot);
+            throw new SecurityException("Invalid workspace path");
+        }
+
         // Mount the host workspace into /workspace inside the container
-        Bind bind = new Bind(workspacePath, new Volume("/workspace"), AccessMode.rw);
+        Bind bind = new Bind(targetMount.toString(), new Volume("/workspace"), AccessMode.rw);
 
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(bind)
                 .withMemory(MEMORY_LIMIT)
                 .withNanoCPUs(NANO_CPU_LIMIT)
-                .withPrivileged(false);         // never run privileged
+                .withPrivileged(false)         // never run privileged
+                .withCapDrop(com.github.dockerjava.api.model.Capability.ALL); // Drop all Linux capabilities
 
         CreateContainerResponse container = dockerClient
                 .createContainerCmd(IMAGE)
                 .withHostConfig(hostConfig)
+                .withUser("1000")               // Run as non-root user
                 .withWorkingDir("/workspace")
                 .withCmd("sh")                  // default shell – keeps container alive via TTY
                 .withTty(true)                  // allocate pseudo-TTY
