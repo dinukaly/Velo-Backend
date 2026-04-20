@@ -1,6 +1,8 @@
 package com.dinukaly.velo.util;
 
-import com.dinukaly.velo.entity.User;
+import com.dinukaly.velo.dto.AuthDetailsDTO;
+import com.dinukaly.velo.entity.Role;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -19,18 +21,14 @@ public class JwtUtil {
     @Value("${jwt.access.expiration}")
     private long accessExpirationMs;
 
-    // build a reusable signing key
     private Key getKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    /**
-     * Generate access token
-     * placed in HttpOnly cookie
-     */
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(AuthDetailsDTO authDetailsDTO) {
         return Jwts.builder()
-                .setSubject(user.getEmail())
+                .setSubject(authDetailsDTO.getEmail())
+                .claim("role", authDetailsDTO.getRole().name()) // "USER" or "ADMIN"
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessExpirationMs))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
@@ -39,10 +37,7 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getKey())
-                    .build()
-                    .parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token);
             return true;
         } catch (Exception e) {
             return false;
@@ -51,14 +46,26 @@ public class JwtUtil {
 
     public String getEmailFromToken(String token) {
         try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
+            return getClaims(token).getSubject();
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public Role getRoleFromToken(String token) {
+        try {
+            String roleStr = getClaims(token).get("role", String.class);
+            return Role.valueOf(roleStr);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
