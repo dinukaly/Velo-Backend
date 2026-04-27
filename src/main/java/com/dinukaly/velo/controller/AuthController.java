@@ -112,6 +112,7 @@ public class AuthController {
 
         // Return user info in the body - never the token itself
         Map<String, String> userInfo = Map.of(
+                "id", principal.getId() != null ? principal.getId().toString() : "",
                 "name", principal.getName() != null ? principal.getName() : "",
                 "email", principal.getEmail()
         );
