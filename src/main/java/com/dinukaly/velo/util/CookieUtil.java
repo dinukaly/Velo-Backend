@@ -20,12 +20,12 @@ public class CookieUtil {
      */
     public ResponseCookie buildAccessCookie(String token) {
         return ResponseCookie.from("access_token", token)
-                .httpOnly(true)
-                .secure(SECURE)
-                .path("/")
-                .maxAge(accessExpirationMs / 1000) // convert ms to seconds
-                .sameSite("Strict")
-                .build();
+            .httpOnly(true)
+            .secure(SECURE)
+            .path("/")
+            .maxAge(accessExpirationMs / 1000) 
+            .sameSite("Lax")
+            .build();
     }
 
     /**
@@ -33,12 +33,12 @@ public class CookieUtil {
      */
     public ResponseCookie buildRefreshCookie(String token) {
         return ResponseCookie.from("refresh_token", token)
-                .httpOnly(true)
-                .secure(SECURE)
-                .path("/api/v1/auth")
-                .maxAge(refreshExpirationSeconds)
-                .sameSite("Strict")
-                .build();
+            .httpOnly(true)
+            .secure(SECURE)
+            .path("/api/v1/auth")
+            .maxAge(refreshExpirationSeconds)
+            .sameSite("Lax")
+            .build();
     }
 
     /**
