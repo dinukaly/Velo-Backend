@@ -47,7 +47,7 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
             String token = extractToken(wsSession);
             if (token == null || !jwtUtil.validateToken(token)) {
                 log.warn("[Terminal] Rejected unauthenticated connection: ws={}", wsId);
-                closeWithError(wsSession, CloseStatus.NOT_ACCEPTABLE, "Invalid or missing JWT token");
+                closeWithError(wsSession, CloseStatus.POLICY_VIOLATION, "Invalid or missing JWT token");
                 return;
             }
 
@@ -150,18 +150,20 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
     // Helpers
     private String extractToken(WebSocketSession session) {
+        String attrToken = (String) session.getAttributes().get("token");
+        if (attrToken != null) {
+            return attrToken;
+        }
         URI uri = session.getUri();
-        if (uri == null)
-            return null;
-        String query = uri.getQuery();
-        if (query == null || query.isBlank())
-            return null;
-
-        for (String part : query.split("&")) {
-            if (part.startsWith("token=")) {
-                return part.substring("token=".length());
+        System.out.println(uri);
+        if (uri != null && uri.getQuery() != null) {
+            for (String part : uri.getQuery().split("&")) {
+                if (part.startsWith("token=")) {
+                    return part.substring("token=".length());
+                }
             }
         }
+
         return null;
     }
 
