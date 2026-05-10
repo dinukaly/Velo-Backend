@@ -2,40 +2,132 @@ package com.dinukaly.velo.controller;
 
 import com.dinukaly.velo.dto.APIResponse;
 import com.dinukaly.velo.dto.AuthDTO;
-import com.dinukaly.velo.dto.AuthResponseDTO;
 import com.dinukaly.velo.dto.RegisterRequestDTO;
+import com.dinukaly.velo.dto.AuthDetailsDTO;
+import com.dinukaly.velo.exception.CustomAuthenticationException;
+import com.dinukaly.velo.exception.NotFoundException;
+import com.dinukaly.velo.repo.UserRepository;
 import com.dinukaly.velo.service.AuthService;
+import com.dinukaly.velo.service.custom.RefreshTokenService;
+import com.dinukaly.velo.util.CookieUtil;
+import com.dinukaly.velo.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@Slf4j
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class AuthController {
+
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
+    private final CookieUtil cookieUtil;
+    private final UserRepository userRepository;
 
     @PostMapping("/signup")
-    public ResponseEntity<APIResponse> signup(@Valid @RequestBody RegisterRequestDTO registerRequestDTO) {
-        return ResponseEntity.ok(
-                new APIResponse(
-                        200,
-                        "User " + registerRequestDTO.getName() + " has been registered",
-                        authService.register(registerRequestDTO)
-                )
-        );
+    public ResponseEntity<APIResponse> signup(@Valid @RequestBody RegisterRequestDTO dto) {
+        AuthDetailsDTO principal = authService.register(dto);
+        return buildAuthResponse(principal, "User " + principal.getName() + " registered successfully");
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<APIResponse> signin(@Valid @RequestBody AuthDTO authDTO) {
-        return ResponseEntity.ok(
-                new APIResponse(
-                        200,
-                        "user logged in successfully",
-                        authService.authenticate(authDTO)
-                )
+    public ResponseEntity<APIResponse> signin(@Valid @RequestBody AuthDTO dto) {
+        AuthDetailsDTO principal = authService.authenticate(dto);
+        return buildAuthResponse(principal, "Signed in successfully");
+    }
+
+    /**
+     * validates the refresh_token cookie
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<APIResponse> refresh(HttpServletRequest request) {
+        String rawRefreshToken = extractCookie(request, "refresh_token");
+        if (rawRefreshToken == null) {
+            throw new CustomAuthenticationException("Refresh token missing");
+        }
+
+        String email = refreshTokenService.getEmailByToken(rawRefreshToken);
+        if (email == null) {
+            log.warn("[Auth] Refresh token not found in Redis — possible reuse attempt");
+            throw new CustomAuthenticationException("Invalid or expired refresh token");
+        }
+
+        // Fetch user from DB to get the current, authoritative role
+        AuthDetailsDTO principal = userRepository.findByEmail(email)
+                .map(AuthDetailsDTO::from)
+                .orElseThrow(() -> new NotFoundException("User not found: " + email));
+
+        // rotate the refresh token
+        String newRawRefreshToken = refreshTokenService.rotateRefreshToken(rawRefreshToken, email);
+        String newAccessToken = jwtUtil.generateAccessToken(principal);
+
+        ResponseCookie accessCookie = cookieUtil.buildAccessCookie(newAccessToken);
+        ResponseCookie refreshCookie = cookieUtil.buildRefreshCookie(newRawRefreshToken);
+
+        log.info("[Auth] Token rotated for: {}", email);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(new APIResponse(200, "Token refreshed", null));
+    }
+
+    //Revokes the refresh token from Redis and clears both cookies
+    @PostMapping("/logout")
+    public ResponseEntity<APIResponse> logout(HttpServletRequest request) {
+        String rawRefreshToken = extractCookie(request, "refresh_token");
+        if (rawRefreshToken != null) {
+            refreshTokenService.revokeToken(rawRefreshToken);
+        }
+
+        ResponseCookie clearAccess = cookieUtil.clearAccessCookie();
+        ResponseCookie clearRefresh = cookieUtil.clearRefreshCookie();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
+                .body(new APIResponse(200, "Logged out successfully", null));
+    }
+
+    /**
+     * Generates both tokens, builds cookies, and wraps the response
+     */
+    private ResponseEntity<APIResponse> buildAuthResponse(AuthDetailsDTO principal, String message) {
+        String accessToken = jwtUtil.generateAccessToken(principal);
+        String rawRefreshToken = refreshTokenService.createRefreshToken(principal.getEmail());
+
+        ResponseCookie accessCookie = cookieUtil.buildAccessCookie(accessToken);
+        ResponseCookie refreshCookie = cookieUtil.buildRefreshCookie(rawRefreshToken);
+
+        // Return user info in the body - never the token itself
+        Map<String, String> userInfo = Map.of(
+                "id", principal.getId() != null ? principal.getId().toString() : "",
+                "name", principal.getName() != null ? principal.getName() : "",
+                "email", principal.getEmail()
         );
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(new APIResponse(200, message, userInfo));
+    }
+
+    private String extractCookie(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (Cookie cookie : request.getCookies()) {
+            if (name.equals(cookie.getName())) return cookie.getValue();
+        }
+        return null;
     }
 }

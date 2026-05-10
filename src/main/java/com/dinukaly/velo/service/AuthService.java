@@ -1,10 +1,10 @@
 package com.dinukaly.velo.service;
 
 import com.dinukaly.velo.dto.AuthDTO;
-import com.dinukaly.velo.dto.AuthResponseDTO;
 import com.dinukaly.velo.dto.RegisterRequestDTO;
+import com.dinukaly.velo.dto.AuthDetailsDTO;
 
 public interface AuthService {
-    AuthResponseDTO register(RegisterRequestDTO registerRequestDTO);
-    AuthResponseDTO authenticate(AuthDTO authDTO);
+    AuthDetailsDTO register(RegisterRequestDTO dto);
+    AuthDetailsDTO authenticate(AuthDTO dto);
 }

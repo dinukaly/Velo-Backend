@@ -19,6 +19,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry
                 .addHandler(terminalWebSocketHandler, "/api/projects/*/terminal")
+                .addInterceptors(new AuthHandshakeInterceptor())
                 .setAllowedOriginPatterns("*");     // CORS — restrict in production
     }
 }
