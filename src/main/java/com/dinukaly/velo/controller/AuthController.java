@@ -72,13 +72,13 @@ public class AuthController {
             log.info("[Auth] Email verified for userId={}", userId);
 
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(frontendUrl + "/auth/verify-email/status?state=success"))
+                    .location(URI.create(frontendUrl + "/verify-email/status?state=success"))
                     .build();
 
         } catch (Exception e) {
             log.warn("[Auth] Email verification failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(frontendUrl + "/auth/verify-email/status?state=error"))
+                    .location(URI.create(frontendUrl + "/verify-email/status?state=error"))
                     .build();
         }
     }

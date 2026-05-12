@@ -31,8 +31,22 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthDetailsDTO register(RegisterRequestDTO dto) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new DuplicateResourceException("Email Already Exists");
+        User existingUser = userRepository.findByEmail(dto.getEmail()).orElse(null);
+        if (existingUser != null) {
+            if (existingUser.isEnabled()) {
+                throw new DuplicateResourceException("An account with this email already exists. Please sign in.");
+            }
+
+            try {
+                String rawToken = emailVerificationService.createVerificationToken(existingUser.getId().toString());
+                emailService.sendVerificationEmail(existingUser.getEmail(), existingUser.getName(), rawToken);
+                log.info("[Auth] Resent verification during signup for existing unverified user: {}", existingUser.getEmail());
+            } catch (Exception e) {
+                log.warn("[Auth] Signup retry for unverified user {} hit resend cooldown or email issue: {}",
+                        existingUser.getEmail(), e.getMessage());
+            }
+
+            return AuthDetailsDTO.from(existingUser);
         }
 
         User user = User.builder()
