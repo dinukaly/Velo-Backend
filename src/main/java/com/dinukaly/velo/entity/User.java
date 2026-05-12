@@ -59,6 +59,6 @@ public class User {
     @PrePersist
     public void prePersist() {
         createdAt = Instant.now();
-        enabled = true;
+        enabled = false;
     }
 }
