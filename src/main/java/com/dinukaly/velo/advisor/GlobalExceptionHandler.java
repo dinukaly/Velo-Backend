@@ -22,6 +22,7 @@ import com.dinukaly.velo.exception.CustomAuthenticationException;
 import com.dinukaly.velo.exception.NotFoundException;
 import com.dinukaly.velo.exception.DuplicateResourceException;
 import com.dinukaly.velo.exception.BadRequestException;
+import com.dinukaly.velo.exception.EmailNotVerifiedException;
 
 @RestControllerAdvice
 @Slf4j
@@ -112,16 +113,16 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // Exception Handler for all other exceptions (catch-all)
-    @ExceptionHandler(RuntimeException.class)
+    // Exception Handler for all other exceptions
+    @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public APIResponse handleAllExceptions(RuntimeException ex) {
+    public APIResponse handleAllExceptions(Exception ex) {
+        log.error("[GlobalError] Unhandled exception occurred: ", ex);
         return new APIResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal server error",
                 ex.getMessage()
         );
-
     }
 
     // Exception Handler for custom not found
@@ -130,8 +131,8 @@ public class GlobalExceptionHandler {
     public APIResponse handleCustomNotFound(NotFoundException ex) {
         return new APIResponse(
                 HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(),
+                null
         );
     }
 
@@ -141,8 +142,8 @@ public class GlobalExceptionHandler {
     public APIResponse handleCustomAuthentication(CustomAuthenticationException ex) {
         return new APIResponse(
                 HttpStatus.UNAUTHORIZED.value(),
-                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(),
+                null
         );
     }
 
@@ -152,8 +153,8 @@ public class GlobalExceptionHandler {
     public APIResponse handleDuplicateResource(DuplicateResourceException ex) {
         return new APIResponse(
                 HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(),
+                null
         );
     }
 
@@ -163,8 +164,23 @@ public class GlobalExceptionHandler {
     public APIResponse handleCustomBadRequest(BadRequestException ex) {
         return new APIResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(),
+                null
+        );
+    }
+
+    // Exception Handler for unverified email
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public APIResponse handleEmailNotVerified(EmailNotVerifiedException ex) {
+        Map<String, String> data = new HashMap<>();
+        data.put("code", "EMAIL_NOT_VERIFIED");
+        data.put("email", ex.getEmail());
+        
+        return new APIResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                ex.getMessage(),
+                data
         );
     }
 }
