@@ -4,6 +4,8 @@ import com.dinukaly.velo.dto.APIResponse;
 import com.dinukaly.velo.dto.AuthDTO;
 import com.dinukaly.velo.dto.RegisterRequestDTO;
 import com.dinukaly.velo.dto.AuthDetailsDTO;
+import com.dinukaly.velo.dto.ForgotPasswordRequestDTO;
+import com.dinukaly.velo.dto.ResetPasswordRequestDTO;
 import com.dinukaly.velo.entity.User;
 import com.dinukaly.velo.exception.BadRequestException;
 import com.dinukaly.velo.exception.CustomAuthenticationException;
@@ -108,6 +110,26 @@ public class AuthController {
 
         // Always return success to prevent email enumeration
         return ResponseEntity.ok(new APIResponse(200, "If an account exists and is unverified, a verification email has been sent.", null));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<APIResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO dto) {
+        authService.requestPasswordReset(dto);
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "If an account exists for this email, a password reset link has been sent.",
+                null
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<APIResponse> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO dto) {
+        authService.resetPassword(dto);
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "Password reset successfully. You can now sign in with your new password.",
+                null
+        ));
     }
 
     @PostMapping("/signin")
