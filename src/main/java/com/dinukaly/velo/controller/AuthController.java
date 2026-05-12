@@ -4,10 +4,16 @@ import com.dinukaly.velo.dto.APIResponse;
 import com.dinukaly.velo.dto.AuthDTO;
 import com.dinukaly.velo.dto.RegisterRequestDTO;
 import com.dinukaly.velo.dto.AuthDetailsDTO;
+import com.dinukaly.velo.dto.ForgotPasswordRequestDTO;
+import com.dinukaly.velo.dto.ResetPasswordRequestDTO;
+import com.dinukaly.velo.entity.User;
+import com.dinukaly.velo.exception.BadRequestException;
 import com.dinukaly.velo.exception.CustomAuthenticationException;
 import com.dinukaly.velo.exception.NotFoundException;
 import com.dinukaly.velo.repo.UserRepository;
 import com.dinukaly.velo.service.AuthService;
+import com.dinukaly.velo.service.custom.EmailService;
+import com.dinukaly.velo.service.custom.EmailVerificationService;
 import com.dinukaly.velo.service.custom.RefreshTokenService;
 import com.dinukaly.velo.util.CookieUtil;
 import com.dinukaly.velo.util.JwtUtil;
@@ -16,12 +22,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -35,11 +45,91 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final CookieUtil cookieUtil;
     private final UserRepository userRepository;
+    private final EmailVerificationService emailVerificationService;
+    private final EmailService emailService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @PostMapping("/signup")
     public ResponseEntity<APIResponse> signup(@Valid @RequestBody RegisterRequestDTO dto) {
         AuthDetailsDTO principal = authService.register(dto);
-        return buildAuthResponse(principal, "User " + principal.getName() + " registered successfully");
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "Registration successful. Please check your email to verify your account.",
+                Map.of("email", principal.getEmail())
+        ));
+    }
+    // email verification
+    @GetMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        try {
+            String userId = emailVerificationService.consumeToken(token);
+
+            User user = userRepository.findById(UUID.fromString(userId))
+                    .orElseThrow(() -> new NotFoundException("User not found"));
+
+            user.setEnabled(true);
+            userRepository.save(user);
+            log.info("[Auth] Email verified for userId={}", userId);
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(frontendUrl + "/verify-email/status?state=success"))
+                    .build();
+
+        } catch (Exception e) {
+            log.warn("[Auth] Email verification failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(frontendUrl + "/verify-email/status?state=error"))
+                    .build();
+        }
+    }
+
+    /**
+     * request a new verification email
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<APIResponse> resendVerification(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Email is required");
+        }
+
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (!user.isEnabled()) {
+                // createVerificationToken enforces the 2 min rate limit
+                try {
+                    String rawToken = emailVerificationService.createVerificationToken(user.getId().toString());
+                    emailService.sendVerificationEmail(user.getEmail(), user.getName(), rawToken);
+                    log.info("[Auth] Resent verification email to: {}", email);
+                } catch (Exception e) {
+                    log.warn("[Auth] Rate limit hit or error sending verification email to {}: {}", email, e.getMessage());
+                }
+            }
+        });
+
+        // Always return success to prevent email enumeration
+        return ResponseEntity.ok(new APIResponse(200, "If an account exists and is unverified, a verification email has been sent.", null));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<APIResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO dto) {
+        authService.requestPasswordReset(dto);
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "If an account exists for this email, a password reset link has been sent.",
+                null
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<APIResponse> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO dto) {
+        authService.resetPassword(dto);
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "Password reset successfully. You can now sign in with your new password.",
+                null
+        ));
     }
 
     @PostMapping("/signin")
@@ -110,7 +200,7 @@ public class AuthController {
         ResponseCookie accessCookie = cookieUtil.buildAccessCookie(accessToken);
         ResponseCookie refreshCookie = cookieUtil.buildRefreshCookie(rawRefreshToken);
 
-        // Return user info in the body - never the token itself
+        // Return user info in the body
         Map<String, String> userInfo = Map.of(
                 "id", principal.getId() != null ? principal.getId().toString() : "",
                 "name", principal.getName() != null ? principal.getName() : "",
