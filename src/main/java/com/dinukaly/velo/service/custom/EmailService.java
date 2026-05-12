@@ -20,32 +20,51 @@ public class EmailService {
     @Value("${app.base-url}")
     private String backendBaseUrl;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Value("${spring.mail.username}")
     private String fromAddress;
 
     @Async
     public void sendVerificationEmail(String toEmail, String userName, String rawToken) {
         String verifyUrl = backendBaseUrl + "/api/v1/auth/verify-email?token=" + rawToken;
+        sendHtmlEmail(
+                toEmail,
+                "Verify your Velo account",
+                buildVerificationHtml(userName, verifyUrl),
+                "verification email"
+        );
+    }
 
-        String html = buildHtml(userName, verifyUrl);
+    @Async
+    public void sendPasswordResetEmail(String toEmail, String userName, String rawToken) {
+        String resetUrl = frontendUrl + "/reset-password?token=" + rawToken;
+        sendHtmlEmail(
+                toEmail,
+                "Reset your Velo password",
+                buildPasswordResetHtml(userName, resetUrl),
+                "password reset email"
+        );
+    }
 
+    private void sendHtmlEmail(String toEmail, String subject, String html, String emailType) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(fromAddress);
             helper.setTo(toEmail);
-            helper.setSubject("Verify your Velo account");
-            helper.setText(html, true); // true = isHtml
+            helper.setSubject(subject);
+            helper.setText(html, true);
 
             mailSender.send(message);
-            log.info("[Email] Verification email sent to: {}", toEmail);
+            log.info("[Email] {} sent to: {}", emailType, toEmail);
         } catch (MessagingException e) {
-            log.error("[Email] Failed to send verification email to {}: {}", toEmail, e.getMessage());
-           // user can request a resend
+            log.error("[Email] Failed to send {} to {}: {}", emailType, toEmail, e.getMessage());
         }
     }
 
-    private String buildHtml(String userName, String verifyUrl) {
+    private String buildVerificationHtml(String userName, String verifyUrl) {
         return """
             <!DOCTYPE html>
             <html lang="en">
@@ -84,5 +103,46 @@ public class EmailService {
             </body>
             </html>
             """.formatted(userName, verifyUrl);
+    }
+
+    private String buildPasswordResetHtml(String userName, String resetUrl) {
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8"/>
+              <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; background:#0f0f0f; color:#e0e0e0; margin:0; padding:0; }
+                .wrapper { max-width:560px; margin:40px auto; background:#1a1a1a; border-radius:12px; overflow:hidden; border:1px solid #2a2a2a; }
+                .header { background:linear-gradient(135deg,#0ea5e9,#14b8a6); padding:36px 40px; text-align:center; }
+                .header h1 { margin:0; color:#fff; font-size:26px; letter-spacing:1px; }
+                .header p  { margin:6px 0 0; color:rgba(255,255,255,0.75); font-size:13px; }
+                .body { padding:36px 40px; }
+                .body p { line-height:1.7; color:#c0c0c0; margin:0 0 16px; }
+                .btn { display:inline-block; margin:8px 0 24px; padding:14px 32px; background:linear-gradient(135deg,#0ea5e9,#14b8a6); color:#fff!important; text-decoration:none; border-radius:8px; font-size:15px; font-weight:600; }
+                .note { font-size:12px; color:#666; }
+                .footer { padding:20px 40px; border-top:1px solid #2a2a2a; text-align:center; font-size:12px; color:#444; }
+              </style>
+            </head>
+            <body>
+              <div class="wrapper">
+                <div class="header">
+                  <h1>Velo IDE</h1>
+                  <p>Password reset requested</p>
+                </div>
+                <div class="body">
+                  <p>Hi <strong>%s</strong>,</p>
+                  <p>We received a request to reset your password. Click the button below to choose a new one.</p>
+                  <p style="text-align:center">
+                    <a class="btn" href="%s">Reset my password</a>
+                  </p>
+                  <p class="note">This link expires in <strong>60 minutes</strong> and can only be used once.<br/>
+                  If you did not request a password reset, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">2025 Velo IDE. All rights reserved.</div>
+              </div>
+            </body>
+            </html>
+            """.formatted(userName, resetUrl);
     }
 }
