@@ -83,11 +83,25 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
-            // find the container
-            SandboxSession sandbox = sandboxRepository.findByProject(project).orElse(null);
+            // find the container with retry mechanism (wait up to 20 seconds for environment to prepare)
+            SandboxSession sandbox = null;
+            for (int i = 0; i < 20; i++) {
+                sandbox = sandboxRepository.findByProject(project).orElse(null);
+                if (sandbox != null && sandbox.isActive()) {
+                    break;
+                }
+                log.info("[Terminal] Waiting for sandbox environment to be ready for project {} (attempt {}/20)", projectIdStr, i + 1);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
             if (sandbox == null || !sandbox.isActive()) {
                 closeWithError(wsSession, CloseStatus.SERVER_ERROR,
-                        "No active sandbox for project " + projectIdStr);
+                        "No active sandbox for project " + projectIdStr + " after waiting.");
                 return;
             }
 
