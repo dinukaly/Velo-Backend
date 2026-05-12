@@ -5,6 +5,7 @@ import com.dinukaly.velo.dto.CreateProjectRequestDTO;
 import com.dinukaly.velo.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
+@Slf4j
 public class ProjectController {
     private final ProjectService projectService;
 
@@ -24,7 +26,7 @@ public class ProjectController {
     public ResponseEntity<APIResponse> create(
             @Valid @RequestBody CreateProjectRequestDTO requestDTO,
             @AuthenticationPrincipal UserDetails userDetails) {
-
+        log.info("Creating project with request: {}", requestDTO.toString());
         return ResponseEntity.ok(new APIResponse(
                 200,
                 "Project created successfully",
