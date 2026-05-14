@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FileContentResponseDTO {
+    private String path;
     private String name;
     private String content;
 }

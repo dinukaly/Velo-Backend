@@ -95,12 +95,13 @@ public class FsController {
     @GetMapping("/content")
     public ResponseEntity<APIResponse> readFile(
             @RequestParam UUID projectId,
-            @RequestParam String path) {
+            @RequestParam String path,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(new APIResponse(
                 200,
                 "File content retrieved successfully",
-                fsService.readFile(projectId, path)));
+                fsService.readFile(projectId, path, userDetails.getUsername())));
     }
 
     /**

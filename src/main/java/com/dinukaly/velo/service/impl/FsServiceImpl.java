@@ -32,7 +32,7 @@ public class FsServiceImpl implements FsService {
 
     @Override
     public List<FsNodeDTO> listDirectory(UUID projectId, String relativePath, String email) {
-        Project project = findProject(projectId);
+        Project project = findOwnedProject(projectId, email);
         Path root = filePathResolver.getProjectWorkspacePath(project);
         Path targetDir = resolveAndValidate(root, relativePath);
 
@@ -147,14 +147,15 @@ public class FsServiceImpl implements FsService {
     }
 
     @Override
-    public FileContentResponseDTO readFile(UUID projectId, String relativePath) {
-        Project project = findProject(projectId);
+    public FileContentResponseDTO readFile(UUID projectId, String relativePath, String email) {
+        Project project = findOwnedProject(projectId, email);
         Path root = filePathResolver.getProjectWorkspacePath(project);
         Path filePath = resolveAndValidate(root, relativePath);
 
         if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
             log.warn("[FsService] readFile: file not found: {}", filePath);
             return FileContentResponseDTO.builder()
+                    .path(relativePath)
                     .name(filePath.getFileName().toString())
                     .content("")
                     .build();
@@ -163,6 +164,7 @@ public class FsServiceImpl implements FsService {
         try {
             String content = Files.readString(filePath);
             return FileContentResponseDTO.builder()
+                    .path(relativePath)
                     .name(filePath.getFileName().toString())
                     .content(content)
                     .build();
