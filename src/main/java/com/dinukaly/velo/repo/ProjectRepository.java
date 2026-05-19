@@ -13,4 +13,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByOwner(User owner);
 
     Optional<Project> findByIdAndOwner(UUID id, User owner);
+
+    long countByOwner(User owner);
 }

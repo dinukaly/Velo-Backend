@@ -24,6 +24,10 @@ public class ApplicationConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getEmail(),
                         user.getPasswordHash(),
+                        user.isEnabled(),
+                        true, // accountNonExpired
+                        true, // credentialsNonExpired
+                        true, // accountNonLocked
                         List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));

@@ -27,6 +27,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -138,6 +140,19 @@ public class AuthController {
         return buildAuthResponse(principal, "Signed in successfully");
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<APIResponse> me(@AuthenticationPrincipal UserDetails userDetails) {
+        AuthDetailsDTO principal = userRepository.findByEmail(userDetails.getUsername())
+                .map(AuthDetailsDTO::from)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userDetails.getUsername()));
+
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "Authenticated user retrieved successfully",
+                toUserInfo(principal)
+        ));
+    }
+
     /**
      * validates the refresh_token cookie
      */
@@ -200,17 +215,19 @@ public class AuthController {
         ResponseCookie accessCookie = cookieUtil.buildAccessCookie(accessToken);
         ResponseCookie refreshCookie = cookieUtil.buildRefreshCookie(rawRefreshToken);
 
-        // Return user info in the body
-        Map<String, String> userInfo = Map.of(
-                "id", principal.getId() != null ? principal.getId().toString() : "",
-                "name", principal.getName() != null ? principal.getName() : "",
-                "email", principal.getEmail()
-        );
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(new APIResponse(200, message, userInfo));
+                .body(new APIResponse(200, message, toUserInfo(principal)));
+    }
+
+    private Map<String, String> toUserInfo(AuthDetailsDTO principal) {
+        return Map.of(
+                "id", principal.getId() != null ? principal.getId().toString() : "",
+                "name", principal.getName() != null ? principal.getName() : "",
+                "email", principal.getEmail(),
+                "role", principal.getRole() != null ? principal.getRole().name() : ""
+        );
     }
 
     private String extractCookie(HttpServletRequest request, String name) {
