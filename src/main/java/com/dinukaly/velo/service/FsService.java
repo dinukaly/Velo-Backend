@@ -17,7 +17,7 @@ public interface FsService {
 
     FsNodeDTO rename(FsRenameRequestDTO dto, String email);
 
-    FileContentResponseDTO readFile(UUID projectId, String relativePath);
+    FileContentResponseDTO readFile(UUID projectId, String relativePath, String email);
 
     void writeFile(FsWriteRequestDTO dto, String email);
 
