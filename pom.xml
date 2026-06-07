@@ -29,6 +29,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>2.0.0-M1</spring-ai.version>
+        <docker-java.version>3.7.1</docker-java.version>
     </properties>
     <dependencies>
         <dependency>
@@ -109,13 +110,13 @@
         <!-- Docker Java API -->
         <dependency>
             <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java</artifactId>
-            <version>3.3.6</version>
+            <artifactId>docker-java-core</artifactId>
+            <version>${docker-java.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-transport-httpclient5</artifactId>
-            <version>3.3.6</version>
+            <version>${docker-java.version}</version>
         </dependency>
         <!-- Spring AI Core -->
         <dependency>
@@ -131,6 +132,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>7.3.0.202506031305-r</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
