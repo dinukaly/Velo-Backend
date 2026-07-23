@@ -28,6 +28,7 @@ public class AgentController {
 
     private final AgentRunService agentRunService;
     private final AgentSseService agentSseService;
+    private final com.dinukaly.velo.service.AgentToolService agentToolService;
 
     // -------------------------------------------------------------------------
     // POST /runs  —  Create a new agent run
@@ -100,5 +101,71 @@ public class AgentController {
 
         agentRunService.rejectRun(runId, userDetails.getUsername());
         return ResponseEntity.ok(new APIResponse(200, "Agent run rejected", null));
+    }
+
+    // -------------------------------------------------------------------------
+    // Tool Inspection Endpoints
+    // -------------------------------------------------------------------------
+
+    @GetMapping("/tools/list-directory")
+    public ResponseEntity<APIResponse> listDirectory(
+            @RequestParam UUID projectId,
+            @RequestParam(defaultValue = "") String relativePath,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.listDirectory(projectId, relativePath, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Directory listed", result));
+    }
+
+    @GetMapping("/tools/read-file")
+    public ResponseEntity<APIResponse> readFile(
+            @RequestParam UUID projectId,
+            @RequestParam String relativePath,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.readFile(projectId, relativePath, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "File read", result));
+    }
+
+    @GetMapping("/tools/read-file-range")
+    public ResponseEntity<APIResponse> readFileRange(
+            @RequestParam UUID projectId,
+            @RequestParam String relativePath,
+            @RequestParam int startLine,
+            @RequestParam int endLine,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.readFileRange(projectId, relativePath, startLine, endLine, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "File range read", result));
+    }
+
+    @GetMapping("/tools/search-code")
+    public ResponseEntity<APIResponse> searchCode(
+            @RequestParam UUID projectId,
+            @RequestParam String query,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.searchCode(projectId, query, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Code search completed", result));
+    }
+
+    @GetMapping("/tools/git-status")
+    public ResponseEntity<APIResponse> getGitStatus(
+            @RequestParam UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.getGitStatus(projectId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Git status fetched", result));
+    }
+
+    @GetMapping("/tools/git-diff")
+    public ResponseEntity<APIResponse> getGitDiff(
+            @RequestParam UUID projectId,
+            @RequestParam(required = false) String path,
+            @RequestParam(defaultValue = "false") boolean staged,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = agentToolService.getGitDiff(projectId, path, staged, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Git diff fetched", result));
     }
 }
