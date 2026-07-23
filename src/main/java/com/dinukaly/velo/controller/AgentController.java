@@ -29,6 +29,7 @@ public class AgentController {
     private final AgentRunService agentRunService;
     private final AgentSseService agentSseService;
     private final com.dinukaly.velo.service.AgentToolService agentToolService;
+    private final com.dinukaly.velo.service.IndexManagementService indexManagementService;
 
     // -------------------------------------------------------------------------
     // POST /runs  —  Create a new agent run
@@ -167,5 +168,28 @@ public class AgentController {
 
         var result = agentToolService.getGitDiff(projectId, path, staged, userDetails.getUsername());
         return ResponseEntity.ok(new APIResponse(200, "Git diff fetched", result));
+    }
+
+    // -------------------------------------------------------------------------
+    // Project Index Management Endpoints
+    // -------------------------------------------------------------------------
+
+    @PostMapping("/projects/{projectId}/index")
+    public ResponseEntity<APIResponse> indexProject(
+            @PathVariable UUID projectId,
+            @RequestParam(defaultValue = "INCREMENTAL") String mode,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = indexManagementService.indexProject(projectId, mode, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Project indexing triggered", result));
+    }
+
+    @GetMapping("/projects/{projectId}/index/status")
+    public ResponseEntity<APIResponse> getIndexStatus(
+            @PathVariable UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = indexManagementService.getIndexStatus(projectId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Project index status fetched", result));
     }
 }
