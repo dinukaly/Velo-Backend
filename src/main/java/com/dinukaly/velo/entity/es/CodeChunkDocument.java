@@ -15,6 +15,8 @@ import java.time.Instant;
  * Represents a code chunk stored in Elasticsearch for lexical (BM25) and dense vector search.
  *
  * Indexed in the physical index 'velo-code-chunks-v1'.
+ * The 'embedding' field holds a 768-dimension dense vector produced by Google Gemini text-embedding-004.
+ * When the embedding provider is unavailable, this field is null and only BM25 search is used.
  */
 @Data
 @Builder
@@ -70,4 +72,12 @@ public class CodeChunkDocument {
 
     @Field(type = FieldType.Date)
     private Instant indexedAt;
+
+    /**
+     * Dense vector embedding of the chunk content.
+     * Dimensions: 768 (Gemini text-embedding-004) — must match Elasticsearch dense_vector mapping.
+     * Null when embedding provider is disabled or unavailable.
+     */
+    @Field(type = FieldType.Dense_Vector)
+    private float[] embedding;
 }
