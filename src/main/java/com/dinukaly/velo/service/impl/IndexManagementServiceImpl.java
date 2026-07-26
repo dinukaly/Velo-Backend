@@ -13,6 +13,7 @@ import com.dinukaly.velo.repo.ProjectRepository;
 import com.dinukaly.velo.repo.UserRepository;
 import com.dinukaly.velo.repo.es.CodeChunkRepository;
 import com.dinukaly.velo.service.CodeChunkerService;
+import com.dinukaly.velo.service.EmbeddingProviderService;
 import com.dinukaly.velo.service.IndexManagementService;
 import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +66,7 @@ public class IndexManagementServiceImpl implements IndexManagementService {
     private final ProjectIndexStateRepository projectIndexStateRepository;
     private final CodeChunkRepository codeChunkRepository;
     private final CodeChunkerService codeChunkerService;
+    private final EmbeddingProviderService embeddingProviderService;
     private final FilePathResolver filePathResolver;
 
     /**
@@ -119,12 +121,22 @@ public class IndexManagementServiceImpl implements IndexManagementService {
 
             List<CodeChunkDocument> allChunks = new ArrayList<>();
             List<Path> filesToIndex = scanWorkspaceFiles(root);
+            boolean embeddingEnabled = embeddingProviderService.isEnabled();
 
             for (Path filePath : filesToIndex) {
                 try {
                     String content = Files.readString(filePath);
                     String relPath = root.relativize(filePath).toString().replace("\\", "/");
                     List<CodeChunkDocument> chunks = codeChunkerService.chunkFile(projectId, relPath, content);
+
+                    // Embed each chunk if the provider is available (best-effort, non-blocking)
+                    if (embeddingEnabled) {
+                        for (CodeChunkDocument chunk : chunks) {
+                            embeddingProviderService.embed(chunk.getContent())
+                                    .ifPresent(chunk::setEmbedding);
+                        }
+                    }
+
                     allChunks.addAll(chunks);
                     fileCount++;
                 } catch (Exception e) {
