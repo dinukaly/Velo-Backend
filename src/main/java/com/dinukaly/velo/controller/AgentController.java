@@ -30,6 +30,7 @@ public class AgentController {
     private final AgentSseService agentSseService;
     private final com.dinukaly.velo.service.AgentToolService agentToolService;
     private final com.dinukaly.velo.service.IndexManagementService indexManagementService;
+    private final com.dinukaly.velo.service.HybridSearchService hybridSearchService;
 
     // -------------------------------------------------------------------------
     // POST /runs  —  Create a new agent run
@@ -148,6 +149,21 @@ public class AgentController {
 
         var result = agentToolService.searchCode(projectId, query, userDetails.getUsername());
         return ResponseEntity.ok(new APIResponse(200, "Code search completed", result));
+    }
+
+    /**
+     * Hybrid semantic + lexical code search (BM25 + vector via RRF).
+     * Falls back to BM25-only or filesystem search when ES or embeddings are unavailable.
+     */
+    @GetMapping("/tools/hybrid-search")
+    public ResponseEntity<APIResponse> hybridSearch(
+            @RequestParam UUID projectId,
+            @RequestParam String query,
+            @RequestParam(defaultValue = "10") int topK,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = hybridSearchService.search(projectId, query, topK, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Hybrid search completed", result));
     }
 
     @GetMapping("/tools/git-status")
