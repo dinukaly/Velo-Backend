@@ -31,6 +31,7 @@ public class AgentController {
     private final com.dinukaly.velo.service.AgentToolService agentToolService;
     private final com.dinukaly.velo.service.IndexManagementService indexManagementService;
     private final com.dinukaly.velo.service.HybridSearchService hybridSearchService;
+    private final com.dinukaly.velo.service.ProposalService proposalService;
 
     // -------------------------------------------------------------------------
     // POST /runs  —  Create a new agent run
@@ -207,5 +208,47 @@ public class AgentController {
 
         var result = indexManagementService.getIndexStatus(projectId, userDetails.getUsername());
         return ResponseEntity.ok(new APIResponse(200, "Project index status fetched", result));
+    }
+
+    // -------------------------------------------------------------------------
+    // Proposal Review Endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * GET /runs/{runId}/proposal
+     * Returns the full proposal (files + hunks) for a run in WAITING_FOR_APPROVAL state.
+     */
+    @GetMapping("/runs/{runId}/proposal")
+    public ResponseEntity<APIResponse> getProposal(
+            @PathVariable UUID runId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        var result = proposalService.getProposal(runId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Proposal fetched", result));
+    }
+
+    /**
+     * POST /runs/{runId}/proposal/hunks/{hunkId}/decide
+     * Accepts or rejects a single hunk. Cascades SKIPPED to dependent hunks in the same group.
+     *
+     * Body: { "decision": "ACCEPTED" | "REJECTED" }
+     */
+    @PostMapping("/runs/{runId}/proposal/hunks/{hunkId}/decide")
+    public ResponseEntity<APIResponse> decideHunk(
+            @PathVariable UUID runId,
+            @PathVariable UUID hunkId,
+            @RequestBody java.util.Map<String, String> body,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        com.dinukaly.velo.entity.HunkDecision decision;
+        try {
+            decision = com.dinukaly.velo.entity.HunkDecision.valueOf(body.getOrDefault("decision", "").toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new APIResponse(400, "Invalid decision value. Use ACCEPTED or REJECTED", null));
+        }
+
+        var result = proposalService.decideHunk(hunkId, decision, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Hunk decision recorded", result));
     }
 }
