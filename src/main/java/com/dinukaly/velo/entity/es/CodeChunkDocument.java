@@ -22,7 +22,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(indexName = "velo-code-chunks-v1")
+@Document(indexName = "velo-code-chunks-v1", createIndex = false)
 public class CodeChunkDocument {
 
     /**

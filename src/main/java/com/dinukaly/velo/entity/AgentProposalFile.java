@@ -36,7 +36,7 @@ public class AgentProposalFile {
     private AgentProposal proposal;
 
     /** Project-relative path of the file being changed (e.g. "src/main/java/Foo.java"). */
-    @Column(name = "file_path", nullable = false, length = 2000)
+    @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
     /**
