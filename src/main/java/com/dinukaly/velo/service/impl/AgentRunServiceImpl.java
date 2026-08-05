@@ -168,11 +168,36 @@ public class AgentRunServiceImpl implements AgentRunService {
     @Async("agentTaskExecutor")
     public void dispatchExecution(UUID runId) {
         log.info("Agent run [{}] dispatched to background executor", runId);
-        // Phase 1: no real work done. A future implementation will:
-        //   1. Transition status to RUNNING
-        //   2. Call filesystem and AI tools
-        //   3. Generate a proposal
-        //   4. Transition to WAITING_FOR_APPROVAL
+        try {
+            // Mock: Transition status to RUNNING
+            Thread.sleep(1000);
+            updateRunStatus(runId, AgentRunStatus.RUNNING);
+
+            // Mock: Doing work
+            Thread.sleep(2000);
+
+            // Mock: Transition to DONE (since we don't have a proposal generator yet)
+            updateRunStatus(runId, AgentRunStatus.DONE);
+            agentSseService.completeStream(runId);
+        } catch (Exception e) {
+            log.error("Mock agent execution failed", e);
+            updateRunStatus(runId, AgentRunStatus.FAILED);
+            agentSseService.completeStream(runId);
+        }
+    }
+
+    private void updateRunStatus(UUID runId, AgentRunStatus newStatus) {
+        agentRunRepository.findById(runId).ifPresent(run -> {
+            run.setStatus(newStatus);
+            if (newStatus == AgentRunStatus.RUNNING) {
+                run.setStartedAt(Instant.now());
+            } else if (newStatus == AgentRunStatus.DONE || newStatus == AgentRunStatus.FAILED) {
+                run.setCompletedAt(Instant.now());
+            }
+            run.setRunVersion(run.getRunVersion() + 1);
+            agentRunRepository.save(run);
+            agentSseService.publishEvent(run, AgentSseEventType.RUN_STATUS, buildRunStatusPayload(run));
+        });
     }
 
     // -------------------------------------------------------------------------
