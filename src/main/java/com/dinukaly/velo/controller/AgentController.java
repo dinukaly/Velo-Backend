@@ -32,6 +32,7 @@ public class AgentController {
     private final com.dinukaly.velo.service.IndexManagementService indexManagementService;
     private final com.dinukaly.velo.service.HybridSearchService hybridSearchService;
     private final com.dinukaly.velo.service.ProposalService proposalService;
+    private final com.dinukaly.velo.service.SafeApplyService safeApplyService;
 
     // -------------------------------------------------------------------------
     // POST /runs  —  Create a new agent run
@@ -250,5 +251,31 @@ public class AgentController {
 
         var result = proposalService.decideHunk(hunkId, decision, userDetails.getUsername());
         return ResponseEntity.ok(new APIResponse(200, "Hunk decision recorded", result));
+    }
+
+    // -------------------------------------------------------------------------
+    // Safe Apply
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /runs/{runId}/apply
+     *
+     * Triggers the Safe-Apply pipeline:
+     * 1. Validates that all hunks have been decided.
+     * 2. Checks on-disk file hashes against baseFileHash (conflict detection).
+     * 3. Applies accepted hunks using in-memory bottom-to-top algorithm.
+     * 4. Writes changes atomically via temp file + Files.move.
+     * 5. Marks the proposal APPLIED and emits run.completed SSE event.
+     *
+     * Returns a structured result with per-file outcomes.
+     */
+    @PostMapping("/runs/{runId}/apply")
+    public ResponseEntity<APIResponse> applyProposal(
+            @PathVariable UUID runId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("[Apply] Safe-Apply triggered for run [{}] by user [{}]", runId, userDetails.getUsername());
+        var result = safeApplyService.apply(runId, userDetails.getUsername());
+        return ResponseEntity.ok(new APIResponse(200, "Proposal applied", result));
     }
 }
