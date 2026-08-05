@@ -29,23 +29,56 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Read the access_token from the HttpOnly cookie
-        String jwtToken = extractFromCookie(request, "access_token");
+        // Extract token from Cookie, Authorization Header, or Query Parameter (for SSE / WebSockets)
+        String jwtToken = extractJwtToken(request);
 
         if (jwtToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String email = jwtUtil.getEmailFromToken(jwtToken);
-            if (email != null && jwtUtil.validateToken(jwtToken)) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                if (userDetails.isEnabled()) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+            try {
+                String email = jwtUtil.getEmailFromToken(jwtToken);
+                if (email != null && jwtUtil.validateToken(jwtToken)) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    if (userDetails.isEnabled()) {
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Invalid or expired token - allow request to proceed to SecurityContext entry point
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Extract JWT token from Cookie, Authorization header, or Query parameters.
+     */
+    private String extractJwtToken(HttpServletRequest request) {
+        // 1. Try Cookie
+        String token = extractFromCookie(request, "access_token");
+        if (token != null && !token.isBlank()) {
+            return token;
+        }
+
+        // 2. Try Authorization Header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        // 3. Try Query Parameter (essential for browser EventSource SSE connections)
+        String queryToken = request.getParameter("token");
+        if (queryToken == null || queryToken.isBlank()) {
+            queryToken = request.getParameter("access_token");
+        }
+        if (queryToken != null && !queryToken.isBlank()) {
+            return queryToken;
+        }
+
+        return null;
     }
 
     /**
