@@ -16,22 +16,10 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 /**
- * Implementation of HybridSearchService.
+ * Combines BM25 lexical search and k-NN dense-vector similarity search using
+ * Reciprocal Rank Fusion (RRF: k=60).
  *
- * Combines two result sets using Reciprocal Rank Fusion (RRF):
- * <ol>
- *   <li>BM25 lexical search via Elasticsearch match query on the 'content' field.</li>
- *   <li>k-NN dense-vector similarity search using the query's embedding vector.</li>
- * </ol>
- *
- * RRF formula: RRF(d) = Σ 1 / (k + rank(d))   where k=60 (standard constant).
- *
- * Fallback hierarchy:
- * <ol>
- *   <li>Hybrid (BM25 + vector) — when both ES and embedding are available.</li>
- *   <li>BM25 only — when ES is available but embedding provider fails.</li>
- *   <li>Filesystem search — when Elasticsearch itself is unavailable.</li>
- * </ol>
+ * Falls back to BM25-only search if embeddings fail, or filesystem search if Elasticsearch is unreachable.
  */
 @Service
 @RequiredArgsConstructor

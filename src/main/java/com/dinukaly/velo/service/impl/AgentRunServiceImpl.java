@@ -7,6 +7,7 @@ import com.dinukaly.velo.exception.NotFoundException;
 import com.dinukaly.velo.repo.*;
 import com.dinukaly.velo.service.AgentRunService;
 import com.dinukaly.velo.service.AgentSseService;
+import com.dinukaly.velo.service.AgentExecutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AgentRunServiceImpl implements AgentRunService {
 
-    // Active statuses — used to enforce the one-active-run-per-project rule
+    // Active statuses used to enforce the one-active-run-per-project constraint
     private static final List<AgentRunStatus> ACTIVE_STATUSES = List.of(
             AgentRunStatus.QUEUED,
             AgentRunStatus.RUNNING,
@@ -37,10 +38,7 @@ public class AgentRunServiceImpl implements AgentRunService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final AgentSseService agentSseService;
-
-    // -------------------------------------------------------------------------
-    // Public API
-    // -------------------------------------------------------------------------
+    private final AgentExecutionService agentExecutionService;
 
     @Override
     @Transactional
@@ -48,13 +46,11 @@ public class AgentRunServiceImpl implements AgentRunService {
         User user = resolveUser(userEmail);
         Project project = resolveOwnedProject(request.getProjectId(), user);
 
-        // V1 policy: dirty files must be saved before starting a run
         if (request.getDirtyFiles() != null && !request.getDirtyFiles().isEmpty()) {
             throw new BadRequestException(
                     "DIRTY_FILES_PRESENT: Please save all open files before starting Agent Mode.");
         }
 
-        // Enforce one active run per project
         boolean hasActiveRun = agentRunRepository.existsActiveRunForProject(project, ACTIVE_STATUSES);
         if (hasActiveRun) {
             throw new BadRequestException(
@@ -75,11 +71,9 @@ public class AgentRunServiceImpl implements AgentRunService {
         log.info("Agent run [{}] created for project [{}] by user [{}]",
                 run.getId(), project.getId(), userEmail);
 
-        // Publish initial queued event
         agentSseService.publishEvent(run, AgentSseEventType.RUN_STATUS,
                 buildRunStatusPayload(run));
 
-        // Dispatch background execution (mock in Phase 1)
         dispatchExecution(run.getId());
 
         return toResponseDTO(run);
@@ -161,28 +155,13 @@ public class AgentRunServiceImpl implements AgentRunService {
         log.info("Agent run [{}] rejected by user [{}]", runId, userEmail);
     }
 
-    // -------------------------------------------------------------------------
-    // Background execution (Phase 1 mock — replaced by real AI logic in Phase 2+)
-    // -------------------------------------------------------------------------
-
     @Async("agentTaskExecutor")
     public void dispatchExecution(UUID runId) {
         log.info("Agent run [{}] dispatched to background executor", runId);
         try {
-            // Mock: Transition status to RUNNING
-            Thread.sleep(1000);
-            updateRunStatus(runId, AgentRunStatus.RUNNING);
-
-            // Mock: Doing work
-            Thread.sleep(2000);
-
-            // Mock: Transition to DONE (since we don't have a proposal generator yet)
-            updateRunStatus(runId, AgentRunStatus.DONE);
-            agentSseService.completeStream(runId);
+            agentExecutionService.executeRun(runId);
         } catch (Exception e) {
-            log.error("Mock agent execution failed", e);
-            updateRunStatus(runId, AgentRunStatus.FAILED);
-            agentSseService.completeStream(runId);
+            log.error("Unhandled exception in agent executor for run [{}]", runId, e);
         }
     }
 
@@ -199,10 +178,6 @@ public class AgentRunServiceImpl implements AgentRunService {
             agentSseService.publishEvent(run, AgentSseEventType.RUN_STATUS, buildRunStatusPayload(run));
         });
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
 
     private User resolveUser(String email) {
         return userRepository.findByEmail(email)
