@@ -1,5 +1,6 @@
 package com.dinukaly.velo.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dinukaly.velo.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -39,6 +40,11 @@ public class ApplicationConfig {
     @Bean
     ModelMapper modelMapper() {
         return new ModelMapper();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
 }
