@@ -66,6 +66,22 @@ public class AgentController {
     }
 
     // -------------------------------------------------------------------------
+    // GET /runs/active  —  Fetch currently active run for a project
+    // -------------------------------------------------------------------------
+
+    @GetMapping("/runs/active")
+    public ResponseEntity<APIResponse> getActiveRun(
+            @RequestParam UUID projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        AgentRunDetailDTO detail = agentRunService.getActiveRun(projectId, userDetails.getUsername());
+        if (detail == null) {
+            return ResponseEntity.ok(new APIResponse(200, "No active run", null));
+        }
+        return ResponseEntity.ok(new APIResponse(200, "Active run fetched", detail));
+    }
+
+    // -------------------------------------------------------------------------
     // GET /runs/{runId}/events  —  SSE stream for live progress
     // -------------------------------------------------------------------------
 

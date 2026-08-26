@@ -13,9 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -74,7 +77,15 @@ public class AgentRunServiceImpl implements AgentRunService {
         agentSseService.publishEvent(run, AgentSseEventType.RUN_STATUS,
                 buildRunStatusPayload(run));
 
-        dispatchExecution(run.getId());
+        // Dispatch execution AFTER the transaction commits so the async thread
+        // can find the persisted AgentRun row in the database.
+        UUID runId = run.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                dispatchExecution(runId);
+            }
+        });
 
         return toResponseDTO(run);
     }
@@ -86,6 +97,39 @@ public class AgentRunServiceImpl implements AgentRunService {
         AgentRun run = agentRunRepository.findByIdAndUser(runId, user)
                 .orElseThrow(() -> new NotFoundException("Agent run not found or access denied"));
 
+        List<AgentStep> steps = agentStepRepository.findByRunOrderBySequenceAsc(run);
+
+        return AgentRunDetailDTO.builder()
+                .id(run.getId())
+                .projectId(run.getProject().getId())
+                .message(run.getMessage())
+                .status(run.getStatus())
+                .currentPath(run.getCurrentPath())
+                .summary(run.getSummary())
+                .errorCode(run.getErrorCode())
+                .errorMessage(run.getErrorMessage())
+                .runVersion(run.getRunVersion())
+                .createdAt(run.getCreatedAt())
+                .startedAt(run.getStartedAt())
+                .completedAt(run.getCompletedAt())
+                .updatedAt(run.getUpdatedAt())
+                .steps(steps.stream().map(this::toStepDTO).collect(Collectors.toList()))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AgentRunDetailDTO getActiveRun(UUID projectId, String userEmail) {
+        User user = resolveUser(userEmail);
+        Project project = resolveOwnedProject(projectId, user);
+
+        Optional<AgentRun> activeRunOpt = agentRunRepository.findFirstByProjectAndStatusInOrderByCreatedAtDesc(project, ACTIVE_STATUSES);
+        
+        if (activeRunOpt.isEmpty()) {
+            return null;
+        }
+
+        AgentRun run = activeRunOpt.get();
         List<AgentStep> steps = agentStepRepository.findByRunOrderBySequenceAsc(run);
 
         return AgentRunDetailDTO.builder()
@@ -155,7 +199,6 @@ public class AgentRunServiceImpl implements AgentRunService {
         log.info("Agent run [{}] rejected by user [{}]", runId, userEmail);
     }
 
-    @Async("agentTaskExecutor")
     public void dispatchExecution(UUID runId) {
         log.info("Agent run [{}] dispatched to background executor", runId);
         try {

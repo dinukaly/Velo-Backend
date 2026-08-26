@@ -133,6 +133,12 @@ public class ProposalServiceImpl implements ProposalService {
                 runId, proposal.getId(), totalHunks);
         agentSseService.publishEvent(run, AgentSseEventType.PROPOSAL_CREATED, payload);
 
+        // Emit SSE run.status event for WAITING_FOR_APPROVAL
+        String statusPayload = String.format(
+                "{\"runId\":\"%s\",\"status\":\"%s\",\"runVersion\":%d}",
+                run.getId(), run.getStatus(), run.getRunVersion());
+        agentSseService.publishEvent(run, AgentSseEventType.RUN_STATUS, statusPayload);
+
         log.info("[ProposalService] Proposal [{}] created for run [{}]: {} files, {} hunks",
                 proposal.getId(), runId, fileEntities.size(), totalHunks);
 

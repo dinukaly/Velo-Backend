@@ -20,6 +20,11 @@ public interface AgentRunService {
     AgentRunDetailDTO getRunDetail(UUID runId, String userEmail);
 
     /**
+     * Fetches the currently active run for a project, if any.
+     */
+    AgentRunDetailDTO getActiveRun(UUID projectId, String userEmail);
+
+    /**
      * Cancels an active run (allowed only before APPLYING begins).
      */
     void cancelRun(UUID runId, String userEmail);

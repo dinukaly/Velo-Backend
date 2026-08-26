@@ -67,8 +67,8 @@ public class AgentSseServiceImpl implements AgentSseService {
         // Send a heartbeat comment immediately to confirm the connection
         sendHeartbeat(emitter);
 
-        // Replay any missed events if lastEventId > 0
-        if (lastEventId > 0) {
+        // Replay any missed events (including all events if lastEventId == 0)
+        if (lastEventId >= 0) {
             List<AgentEvent> missed = agentEventRepository
                     .findByRunAndSequenceGreaterThanOrderBySequenceAsc(run, lastEventId);
             for (AgentEvent event : missed) {
