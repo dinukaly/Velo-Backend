@@ -26,6 +26,8 @@ import java.util.UUID;
  *
  * Note: Not marked @Async because it runs inside the agentTaskExecutor thread pool.
  */
+import org.springframework.scheduling.annotation.Async;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -45,10 +47,13 @@ public class AgentExecutionServiceImpl implements AgentExecutionService {
     private final AgentProposalParser agentProposalParser;
 
     @Override
+    @Async("agentTaskExecutor")
     public void executeRun(UUID runId) {
         log.info("[AgentExec] Starting pipeline for run [{}]", runId);
 
-        AgentRun run = agentRunRepository.findById(runId).orElse(null);
+        // Use the eager-fetch query so the async thread has User and Project
+        // fully initialized without needing an open Hibernate session.
+        AgentRun run = agentRunRepository.findByIdWithAssociations(runId).orElse(null);
         if (run == null) {
             log.error("[AgentExec] Run [{}] not found — aborting", runId);
             return;

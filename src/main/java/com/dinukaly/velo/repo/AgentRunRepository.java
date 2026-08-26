@@ -34,4 +34,17 @@ public interface AgentRunRepository extends JpaRepository<AgentRun, UUID> {
      * Finds all runs stuck in transient states after a backend restart, for recovery.
      */
     List<AgentRun> findByStatusIn(List<AgentRunStatus> statuses);
+
+    /**
+     * Finds the currently active run for a project, if any.
+     */
+    Optional<AgentRun> findFirstByProjectAndStatusInOrderByCreatedAtDesc(Project project, List<AgentRunStatus> statuses);
+
+    /**
+     * Fetches a run with its User and Project associations eagerly initialized.
+     * Used by the async agent execution thread which has no open Hibernate session
+     * and cannot lazily load proxy associations.
+     */
+    @Query("SELECT r FROM AgentRun r JOIN FETCH r.user JOIN FETCH r.project WHERE r.id = :id")
+    Optional<AgentRun> findByIdWithAssociations(@Param("id") UUID id);
 }
