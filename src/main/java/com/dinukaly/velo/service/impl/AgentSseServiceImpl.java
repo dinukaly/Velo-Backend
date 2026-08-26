@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -99,10 +101,21 @@ public class AgentSseServiceImpl implements AgentSseService {
                 .build();
         agentEventRepository.save(event);
 
-        // 3. Fan out to all active emitters for this run
+        // 3. Fan out to all active emitters for this run (after transaction commits to avoid race conditions)
         List<SseEmitter> emitters = emitterRegistry.getOrDefault(run.getId(), List.of());
-        for (SseEmitter emitter : emitters) {
-            sendToEmitter(emitter, nextSeq, eventType.getValue(), payload);
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    for (SseEmitter emitter : emitters) {
+                        sendToEmitter(emitter, nextSeq, eventType.getValue(), payload);
+                    }
+                }
+            });
+        } else {
+            for (SseEmitter emitter : emitters) {
+                sendToEmitter(emitter, nextSeq, eventType.getValue(), payload);
+            }
         }
 
         log.debug("Published SSE event [{}] seq={} to {} subscriber(s) for run [{}]",
