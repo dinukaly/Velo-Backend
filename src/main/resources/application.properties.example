@@ -1,62 +1,71 @@
+# ==============================================================================
+# Velo Backend - Application Properties Template
+# ==============================================================================
+# Copy this file to 'application.properties' or set environment variables:
+#   cp application.properties.example application.properties
+# ==============================================================================
+
 spring.application.name=velo
 
-# Automatically import local developer configuration
-spring.config.import=optional:classpath:application-local.properties
-
-# Database Configuration
+# --- Database Configuration ---
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/velo?createDatabaseIfNotExist=true}
 spring.datasource.username=${DB_USERNAME:root}
 spring.datasource.password=${DB_PASSWORD:your_mysql_password_here}
 spring.datasource.hikari.maximum-pool-size=10
 
-# JPA Configuration
+# --- JPA / Hibernate Configuration ---
 spring.jpa.generate-ddl=true
 spring.jpa.show-sql=false
 spring.jpa.hibernate.ddl-auto=update
 
-# Token Configuration
-jwt.secret=${JWT_SECRET:dev-only-change-me-12345678901234567890}
+# --- JWT Authentication Configuration ---
+# Secret key used for signing JWTs (must be at least 256 bits for HS256)
+jwt.secret=${JWT_SECRET:your_secure_256_bit_jwt_secret_key_here}
 # Access token: 15 minutes (ms)
 jwt.access.expiration=900000
 # Refresh token: 7 days (ms, used as Redis TTL)
 jwt.refresh.expiration=604800000
 
-# Redis Configuration
+# --- Redis Configuration ---
 spring.data.redis.host=${REDIS_HOST:localhost}
 spring.data.redis.port=${REDIS_PORT:6379}
 
+# --- Logging ---
 logging.file.name=logs/app.log
 
-# Workspace Configuration
+# --- Workspace Root Path ---
 workspace.root=${WORKSPACE_ROOT:C:/workspace}
 
-# Docker Configuration
+# --- Docker Configuration ---
+# Windows named pipe: npipe:////./pipe/docker_engine
+# Linux/macOS socket: unix:///var/run/docker.sock
 docker.host=${DOCKER_HOST:npipe:////./pipe/docker_engine}
 
-# AI Module Configuration
+# --- AI Module Configuration ---
 velo.ai.enabled=true
 velo.ai.model=openrouter/free
 velo.ai.max-prompt-characters=12000
 velo.ai.max-tool-iterations=6
 velo.ai.max-tool-result-characters=12000
 
-# AI Provider Configuration (Spring AI + OpenRouter/OpenAI-compatible endpoint)
+# --- Spring AI & OpenRouter LLM Configuration ---
+# Obtain an OpenRouter key from: https://openrouter.ai/keys
 spring.ai.openai.api-key=${OPENROUTER_API_KEY:your_openrouter_api_key_here}
 spring.ai.openai.base-url=${OPENROUTER_BASE_URL:https://openrouter.ai/api}
 spring.ai.openai.chat.options.model=openrouter/free
 spring.ai.openai.headers.Content-Type=application/json
 
-# App URLs (used for email links and redirects)
+# --- App & CORS URLs ---
 app.base-url=${APP_BASE_URL:http://localhost:8080}
 app.frontend-url=${APP_FRONTEND_URL:http://localhost:3000}
-
-# Browser-facing deployment configuration
 cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 cookie.secure=${COOKIE_SECURE:false}
 cookie.same-site=${COOKIE_SAMESITE:Lax}
 
-# Email (SMTP) Configuration
+# --- Email (SMTP) Configuration ---
+# For local development use Mailpit (https://github.com/axllent/mailpit)
+# For production replace with real SMTP credentials
 spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.port=${MAIL_PORT:587}
 spring.mail.username=${MAIL_USERNAME:your_email@gmail.com}
@@ -68,12 +77,13 @@ spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
 spring.mail.properties.mail.smtp.ssl.protocols=TLSv1.2
 spring.mail.properties.mail.debug=false
 
-# Elasticsearch Configuration
+# --- Elasticsearch Configuration ---
 spring.elasticsearch.uris=${ELASTICSEARCH_URI:http://localhost:9200}
 spring.elasticsearch.username=${ELASTICSEARCH_USERNAME:}
 spring.elasticsearch.password=${ELASTICSEARCH_PASSWORD:}
 
-# Embedding Provider Configuration (Google Gemini)
+# --- Gemini Embedding Provider (Semantic Search) ---
+# Obtain a free Google AI Studio key from: https://aistudio.google.com/app/apikey
 velo.ai.embedding.enabled=${EMBEDDING_ENABLED:true}
 velo.ai.embedding.provider=${EMBEDDING_PROVIDER:gemini}
 velo.ai.embedding.base-url=${EMBEDDING_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai}

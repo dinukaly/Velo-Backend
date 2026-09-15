@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Environment Overrides ###
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+*.local.properties
+
+### Application Logs ###
+logs/
+*.log
