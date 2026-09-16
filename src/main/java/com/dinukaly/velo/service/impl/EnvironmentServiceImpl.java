@@ -39,7 +39,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new NotFoundException("User not found: " + username));
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndOwner(projectId, user)
                 .orElseThrow(() -> new NotFoundException(
                         "Project not found or access denied: " + projectId));
 
