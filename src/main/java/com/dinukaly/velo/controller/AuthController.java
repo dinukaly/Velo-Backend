@@ -29,6 +29,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -51,6 +52,17 @@ public class AuthController {
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
+
+    @GetMapping("/csrf")
+    public ResponseEntity<APIResponse> csrf(CsrfToken csrfToken) {
+        return ResponseEntity.ok(new APIResponse(
+                200,
+                "CSRF token issued",
+                Map.of(
+                        "token", csrfToken.getToken(),
+                        "headerName", csrfToken.getHeaderName())
+        ));
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<APIResponse> signup(@Valid @RequestBody RegisterRequestDTO dto) {

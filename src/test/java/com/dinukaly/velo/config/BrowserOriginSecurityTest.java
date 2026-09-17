@@ -44,18 +44,24 @@ class BrowserOriginSecurityTest {
     private PasswordEncoder passwordEncoder;
 
     private BrowserOriginProperties properties;
+    private CookieProperties cookieProperties;
     private BrowserOriginHandshakeInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
         properties = new BrowserOriginProperties();
         properties.setAllowedOrigins(List.of(ALLOWED_ORIGIN));
+        cookieProperties = new CookieProperties();
         interceptor = new BrowserOriginHandshakeInterceptor(properties);
     }
 
     @Test
     void restCorsUsesConfiguredOrigins() {
-        SecurityConfig securityConfig = new SecurityConfig(userDetailsService, passwordEncoder, properties);
+        SecurityConfig securityConfig = new SecurityConfig(
+                userDetailsService,
+                passwordEncoder,
+                properties,
+                cookieProperties);
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.setRequestURI("/api/v1/projects");
 
