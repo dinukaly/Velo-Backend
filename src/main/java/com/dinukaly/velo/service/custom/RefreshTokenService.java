@@ -20,7 +20,7 @@ public class RefreshTokenService {
     private final StringRedisTemplate redisTemplate;
 
     @Value("${jwt.refresh.expiration}")
-    private long refreshExpirationSeconds;
+    private long refreshExpirationMs;
 
     // Redis key prefix
     private static final String KEY_PREFIX = "refresh_token:";
@@ -31,7 +31,7 @@ public class RefreshTokenService {
     public String createRefreshToken(String email) {
         String rawToken = UUID.randomUUID().toString();
         String hashed = hash(rawToken);
-        redisTemplate.opsForValue().set(KEY_PREFIX + hashed, email, refreshExpirationSeconds, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(KEY_PREFIX + hashed, email, refreshExpirationMs, TimeUnit.MILLISECONDS);
         log.debug("[RefreshTokenService] Created refresh token for: {}", email);
         return rawToken;
     }
