@@ -14,7 +14,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v2/files")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class FsController {
 
     private final FsService fsService;

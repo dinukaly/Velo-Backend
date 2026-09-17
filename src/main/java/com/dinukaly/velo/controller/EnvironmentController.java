@@ -13,7 +13,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/environment")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class EnvironmentController {
 
     private final EnvironmentService environmentService;

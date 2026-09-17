@@ -22,7 +22,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/ai/agent")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 @Slf4j
 public class AgentController {
 
