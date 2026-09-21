@@ -12,6 +12,15 @@ import static org.mockito.Mockito.*;
 
 class SandboxResourcePolicyTest {
     @Test
+    void dockerErrorsPropagateSoCallersRetainSessionRecords() {
+        DockerClient docker = mock(DockerClient.class, RETURNS_DEEP_STUBS);
+        when(docker.inspectContainerCmd("existing").exec()).thenThrow(new IllegalStateException("offline"));
+        SandboxServiceImpl service = new SandboxServiceImpl(docker);
+        assertThrows(IllegalStateException.class, () -> service.isContainerAvailable("existing"));
+        assertThrows(IllegalStateException.class, () -> service.stopContainer("existing"));
+    }
+
+    @Test
     void acceptsPolicyAndRejectsMissingOrRelaxedControls() {
         InspectContainerResponse inspected = mock(InspectContainerResponse.class);
         HostConfig config = SandboxResourcePolicy.apply(HostConfig.newHostConfig());

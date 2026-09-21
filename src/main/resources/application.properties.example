@@ -7,6 +7,13 @@
 
 spring.application.name=velo
 
+# Unique per deployment/database; one backend instance per ID for automatic cleanup.
+sandbox.cleanup.deployment-id=${SANDBOX_DEPLOYMENT_ID:velo-local}
+sandbox.cleanup.enabled=${SANDBOX_CLEANUP_ENABLED:true}
+sandbox.cleanup.grace-seconds=600
+sandbox.cleanup.initial-delay-ms=60000
+sandbox.cleanup.interval-ms=300000
+
 # --- Database Configuration ---
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/velo?createDatabaseIfNotExist=true}

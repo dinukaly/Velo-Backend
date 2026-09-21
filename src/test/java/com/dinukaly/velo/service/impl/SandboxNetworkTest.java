@@ -37,6 +37,7 @@ class SandboxNetworkTest {
         assertTrue(config.getValue().getSecurityOpts().contains("no-new-privileges:true"));
         assertEquals("/workspace", config.getValue().getBinds()[0].getVolume().getPath());
         verify(create).withTty(true);
+        verify(create).withLabels(Map.of(com.dinukaly.velo.util.SandboxLifecycle.DEPLOYMENT_LABEL, "velo-local"));
         verify(create).withStdinOpen(true);
         verify(docker.startContainerCmd("sandbox")).exec();
     }

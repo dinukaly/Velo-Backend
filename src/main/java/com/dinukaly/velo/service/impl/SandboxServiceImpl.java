@@ -3,6 +3,7 @@ package com.dinukaly.velo.service.impl;
 import com.dinukaly.velo.service.SandboxService;
 import com.dinukaly.velo.util.SandboxNetworkPolicy;
 import com.dinukaly.velo.util.SandboxResourcePolicy;
+import com.dinukaly.velo.util.SandboxLifecycle;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -29,8 +30,17 @@ public class SandboxServiceImpl implements SandboxService {
     @Value("${workspace.root}")
     private String workspaceRoot;
 
+    @Value("${sandbox.cleanup.deployment-id:velo-local}")
+    private String deploymentId = "velo-local";
+
     @Override
     public String startContainer(String workspacePath) {
+        synchronized (SandboxLifecycle.MONITOR) {
+            return startContainerLocked(workspacePath);
+        }
+    }
+
+    private String startContainerLocked(String workspacePath) {
         log.info("Starting sandbox container for workspace: {}", workspacePath);
 
         //ensure the requested mount path is strictly inside the workspace root
@@ -55,6 +65,7 @@ public class SandboxServiceImpl implements SandboxService {
 
         CreateContainerResponse container = dockerClient
                 .createContainerCmd(IMAGE)
+                .withLabels(java.util.Map.of(SandboxLifecycle.DEPLOYMENT_LABEL, deploymentId))
                 .withHostConfig(hostConfig)
                 .withUser("1000")               // Run as non-root user
                 .withWorkingDir("/workspace")
@@ -64,6 +75,7 @@ public class SandboxServiceImpl implements SandboxService {
                 .exec();
 
         String containerId = container.getId();
+        SandboxLifecycle.protectUntilCommit(containerId);
         dockerClient.startContainerCmd(containerId).exec();
         log.info("Sandbox container started: {}", containerId);
         return containerId;
@@ -87,6 +99,7 @@ public class SandboxServiceImpl implements SandboxService {
             log.info("Sandbox container stopped and removed: {}", containerId);
         } catch (Exception e) {
             log.warn("Error while stopping container {}: {}", containerId, e.getMessage());
+            throw new IllegalStateException("Could not remove sandbox; session retained for retry", e);
         }
     }
 
@@ -113,7 +126,7 @@ public class SandboxServiceImpl implements SandboxService {
             return false;
         } catch (Exception e) {
             log.warn("Error checking or starting container {}: {}", containerId, e.getMessage());
-            return false;
+            throw new IllegalStateException("Could not inspect or start sandbox", e);
         }
     }
 }
