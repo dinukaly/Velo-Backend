@@ -31,6 +31,10 @@ class SandboxNetworkTest {
         ArgumentCaptor<HostConfig> config = ArgumentCaptor.forClass(HostConfig.class);
         verify(create).withHostConfig(config.capture());
         assertEquals("none", config.getValue().getNetworkMode());
+        assertEquals(128L, config.getValue().getPidsLimit());
+        assertTrue(config.getValue().getReadonlyRootfs());
+        assertEquals(com.dinukaly.velo.util.SandboxResourcePolicy.TMPFS, config.getValue().getTmpFs());
+        assertTrue(config.getValue().getSecurityOpts().contains("no-new-privileges:true"));
         assertEquals("/workspace", config.getValue().getBinds()[0].getVolume().getPath());
         verify(create).withTty(true);
         verify(create).withStdinOpen(true);

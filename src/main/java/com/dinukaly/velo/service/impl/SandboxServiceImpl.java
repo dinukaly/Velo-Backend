@@ -2,6 +2,7 @@ package com.dinukaly.velo.service.impl;
 
 import com.dinukaly.velo.service.SandboxService;
 import com.dinukaly.velo.util.SandboxNetworkPolicy;
+import com.dinukaly.velo.util.SandboxResourcePolicy;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -44,7 +45,7 @@ public class SandboxServiceImpl implements SandboxService {
         // Mount the host workspace into /workspace inside the container
         Bind bind = new Bind(targetMount.toString(), new Volume("/workspace"), AccessMode.rw);
 
-        HostConfig hostConfig = HostConfig.newHostConfig()
+        HostConfig hostConfig = SandboxResourcePolicy.apply(HostConfig.newHostConfig())
                 .withNetworkMode(SandboxNetworkPolicy.NETWORK_MODE)
                 .withBinds(bind)
                 .withMemory(MEMORY_LIMIT)
@@ -95,6 +96,7 @@ public class SandboxServiceImpl implements SandboxService {
         try {
             InspectContainerResponse response = dockerClient.inspectContainerCmd(containerId).exec();
             SandboxNetworkPolicy.requireIsolated(response);
+            SandboxResourcePolicy.requireHardened(response);
             if (Boolean.TRUE.equals(response.getState().getRunning())) {
                 log.info("Container {} is already running", containerId);
                 return true;
