@@ -1,6 +1,7 @@
 package com.dinukaly.velo.service.impl;
 
 import com.dinukaly.velo.service.TerminalService;
+import com.dinukaly.velo.util.SandboxNetworkPolicy;
 import com.dinukaly.velo.terminal.TerminalSession;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
@@ -27,6 +28,7 @@ public class TerminalServiceImpl implements TerminalService {
 
     @Override
     public TerminalSession createSession(String containerId, WebSocketSession wsSession) {
+        SandboxNetworkPolicy.requireIsolated(dockerClient.inspectContainerCmd(containerId).exec());
         log.info("[TerminalService] Creating exec session: container={} ws={}",
                 containerId, wsSession.getId());
 
