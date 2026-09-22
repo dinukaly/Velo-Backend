@@ -74,53 +74,28 @@ public class AgentPromptBuilder {
      * @param searchResults Search match snippets for context
      * @param fileContents  Full contents of relevant files
      */
-    public String buildPrompt(
-            String userMessage,
-            String currentPath,
-            String selectedText,
-            List<CodeSearchResultMatchDTO> searchResults,
-            List<ReadFile> fileContents) {
-
-        StringBuilder prompt = new StringBuilder();
-        prompt.append(SYSTEM_PROMPT).append("\n");
-
-        if (currentPath != null && !currentPath.isBlank()) {
-            prompt.append("## Active editor file\n`").append(currentPath).append("`\n\n");
+    public AiPrompt buildPrompt(
+            String userMessage, String currentPath, String selectedText,
+            List<CodeSearchResultMatchDTO> searchResults, List<ReadFile> fileContents) {
+        var context = new java.util.ArrayList<AiPrompt.Context>();
+        if (!AiProtectedPaths.isProtected(currentPath)) {
+            context.add(new AiPrompt.Context("editor-selection", currentPath, selectedText));
         }
-
-        if (selectedText != null && !selectedText.isBlank()) {
-            prompt.append("## Selected code (highlighted by the developer)\n");
-            prompt.append("```\n").append(selectedText).append("\n```\n\n");
+        if (searchResults != null) {
+            searchResults.stream().filter(match -> !AiProtectedPaths.isProtected(match.getPath()))
+                    .limit(10).forEach(match -> context.add(new AiPrompt.Context(
+                            "code-search", match.getPath(), "line " + match.getLineNumber() + ": "
+                            + truncate(AiSecretRedactor.redact(match.getLineContent()), 120))));
         }
-
-        if (searchResults != null && !searchResults.isEmpty()) {
-            prompt.append("## Relevant locations found during code search\n");
-            int shown = 0;
-            for (CodeSearchResultMatchDTO match : searchResults) {
-                if (shown++ >= 10) {
-                    prompt.append("  _(additional results omitted)_\n");
-                    break;
+        if (fileContents != null) {
+            for (ReadFile file : fileContents) {
+                if (!AiProtectedPaths.isProtected(file.path())) {
+                    context.add(new AiPrompt.Context("repository-file-numbered", file.path(),
+                            addLineNumbers(AiSecretRedactor.redact(file.content()))));
                 }
-                prompt.append("- `").append(match.getPath())
-                      .append("` line ").append(match.getLineNumber())
-                      .append(": ").append(truncate(AiSecretRedactor.redact(match.getLineContent()), 120)).append("\n");
-            }
-            prompt.append("\n");
-        }
-
-        if (fileContents != null && !fileContents.isEmpty()) {
-            prompt.append("## File contents (use these as the source of truth for line numbers and exact text)\n\n");
-            for (ReadFile rf : fileContents) {
-                String numbered = addLineNumbers(AiSecretRedactor.redact(rf.content()));
-                prompt.append("### `").append(rf.path()).append("`\n");
-                prompt.append("```\n").append(numbered).append("\n```\n\n");
             }
         }
-
-        prompt.append("## Developer request\n").append(userMessage).append("\n\n");
-        prompt.append("Now produce the JSON proposal block following the schema above. Output ONLY the fenced JSON block.\n");
-
-        return prompt.toString();
+        return new AiPrompt(SYSTEM_PROMPT + AiPrompt.TRUST_RULES, userMessage, context);
     }
 
     /**

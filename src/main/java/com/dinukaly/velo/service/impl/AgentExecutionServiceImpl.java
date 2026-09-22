@@ -118,7 +118,7 @@ public class AgentExecutionServiceImpl implements AgentExecutionService {
             AgentStep generateStep = createStep(run, 5, AgentStepType.GENERATING_EDITS,
                     AgentStepStatus.RUNNING, "Generating code changes", null);
 
-            String prompt = agentPromptBuilder.buildPrompt(
+            var prompt = agentPromptBuilder.buildPrompt(
                     run.getMessage(),
                     run.getCurrentPath(),
                     run.getSelectedText(),
@@ -126,7 +126,7 @@ public class AgentExecutionServiceImpl implements AgentExecutionService {
                     fileContents
             );
 
-            log.debug("[AgentExec] Sending prompt to LLM ({} chars)", prompt.length());
+            log.debug("[AgentExec] Sending structured context to LLM");
             String llmOutput = aiService.chat(prompt);
             log.debug("[AgentExec] LLM responded ({} chars)", llmOutput != null ? llmOutput.length() : 0);
 

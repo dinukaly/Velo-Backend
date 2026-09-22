@@ -37,7 +37,7 @@ public class AIController {
                 userDetails.getUsername()
         );
 
-        String prompt = promptBuilder.buildPrompt(
+        var prompt = promptBuilder.buildPrompt(
                 request.getMessage(),
                 fileContent,
                 request.getSelectedCode(),

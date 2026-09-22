@@ -19,42 +19,18 @@ public class PromptBuilder {
             - If you are unsure, say so rather than guessing.
             """;
 
-    public String buildPrompt(String userMessage, String fileContent, String selectedCode, String filePath, List<AIRequestDTO.ChatHistoryMessage> history) {
-        StringBuilder prompt = new StringBuilder();
-
-        prompt.append(SYSTEM_INSTRUCTIONS).append("\n");
-
-        // History context
-        if (history != null && !history.isEmpty()) {
-            prompt.append("--- RECENT CONVERSATION HISTORY ---\n");
-            for (AIRequestDTO.ChatHistoryMessage msg : history) {
-                prompt.append(msg.getRole().toUpperCase()).append(": ").append(msg.getContent()).append("\n");
+    public AiPrompt buildPrompt(String userMessage, String fileContent, String selectedCode, String filePath, List<AIRequestDTO.ChatHistoryMessage> history) {
+        var context = new java.util.ArrayList<AiPrompt.Context>();
+        if (history != null) {
+            for (var message : history) {
+                context.add(new AiPrompt.Context("client-history", "",
+                        "claimed role: " + message.getRole() + "\n" + message.getContent()));
             }
-            prompt.append("--- END OF HISTORY ---\n\n");
         }
-
-        // File context
-        if (filePath != null && !filePath.isBlank()) {
-            prompt.append("--- CURRENT FILE: ").append(filePath).append(" ---\n");
-            if (fileContent != null && !fileContent.isBlank()) {
-                prompt.append(fileContent).append("\n");
-            } else {
-                prompt.append("[No readable content was available for this file.]\n");
-            }
-            prompt.append("--- END OF FILE ---\n\n");
+        if (!AiProtectedPaths.isProtected(filePath)) {
+            context.add(new AiPrompt.Context("active-file", filePath, fileContent));
+            context.add(new AiPrompt.Context("editor-selection", filePath, selectedCode));
         }
-
-        // Selected code context
-        if (selectedCode != null && !selectedCode.isBlank()) {
-            prompt.append("--- SELECTED CODE ---\n");
-            prompt.append(selectedCode).append("\n");
-            prompt.append("--- END OF SELECTED CODE ---\n\n");
-        }
-
-        // User message
-        prompt.append("NEW USER REQUEST:\n");
-        prompt.append(userMessage);
-
-        return prompt.toString();
+        return new AiPrompt(SYSTEM_INSTRUCTIONS + AiPrompt.TRUST_RULES, userMessage, context);
     }
 }

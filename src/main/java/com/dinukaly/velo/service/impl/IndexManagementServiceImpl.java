@@ -28,7 +28,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.*;
-import java.util.regex.Pattern;
+import com.dinukaly.velo.util.AiProtectedPaths;
 
 /**
  * Implementation of IndexManagementService.
@@ -51,16 +51,6 @@ public class IndexManagementServiceImpl implements IndexManagementService {
             ".git", "node_modules", "dist", "build", "target", "coverage", ".next", "out", "vendor"
     );
 
-    private static final List<Pattern> SENSITIVE_FILE_PATTERNS = List.of(
-            Pattern.compile("^\\.env(\\..*)?$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.pem$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.key$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.p12$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.jks$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^credentials.*", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^secrets.*", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^\\.ssh.*", Pattern.CASE_INSENSITIVE)
-    );
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -249,14 +239,7 @@ public class IndexManagementServiceImpl implements IndexManagementService {
     }
 
     private boolean isSensitive(String pathOrName) {
-        if (pathOrName == null) return false;
-        String clean = pathOrName.replace("\\", "/");
-        for (Pattern pattern : SENSITIVE_FILE_PATTERNS) {
-            if (pattern.matcher(clean).matches() || pattern.matcher(Paths.get(clean).getFileName().toString()).matches()) {
-                return true;
-            }
-        }
-        return false;
+        return AiProtectedPaths.isProtected(pathOrName);
     }
 
     private ProjectIndexState getOrCreateState(Project project) {

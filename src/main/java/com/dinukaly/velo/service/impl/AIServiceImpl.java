@@ -1,6 +1,6 @@
 package com.dinukaly.velo.service.impl;
 import com.dinukaly.velo.service.AIService;
-import com.dinukaly.velo.util.AiSecretRedactor;
+import com.dinukaly.velo.util.AiPrompt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -14,11 +14,13 @@ public class AIServiceImpl implements AIService {
     private final ChatClient chatClient;
 
     @Override
-    public String chat(String prompt) {
-        log.debug("Sending prompt to AI model ({} chars)", prompt.length());
+    public String chat(AiPrompt prompt) {
+        String userContent = prompt.userContent();
+        log.debug("Sending prompt to AI model ({} chars)", userContent.length());
 
         String response = chatClient.prompt()
-                .user(AiSecretRedactor.redact(prompt))
+                .system(prompt.systemInstructions())
+                .user(userContent)
                 .call()
                 .content();
 
