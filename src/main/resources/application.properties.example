@@ -10,6 +10,10 @@
 
 spring.application.name=velo
 
+# Shared per-account admission budget across expensive HTTP endpoints (requires Redis).
+security.expensive-requests.limit=${EXPENSIVE_REQUEST_LIMIT:20}
+security.expensive-requests.window-seconds=${EXPENSIVE_REQUEST_WINDOW_SECONDS:60}
+
 # Unique per deployment/database; one backend instance per ID for automatic cleanup.
 sandbox.cleanup.deployment-id=${SANDBOX_DEPLOYMENT_ID:velo-local}
 sandbox.cleanup.enabled=${SANDBOX_CLEANUP_ENABLED:true}

@@ -25,6 +25,7 @@ public class AIController {
     private final PromptBuilder promptBuilder;
 
     @PostMapping("/chat")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> chat(
             @Valid @RequestBody AIRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {

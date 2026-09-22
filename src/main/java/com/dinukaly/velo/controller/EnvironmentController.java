@@ -21,6 +21,7 @@ public class EnvironmentController {
      * POST /api/v1/environment/open/{projectId}
      */
     @PostMapping("/open/{projectId}")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> openEnvironment(
             @PathVariable UUID projectId,
             @AuthenticationPrincipal UserDetails userDetails) {

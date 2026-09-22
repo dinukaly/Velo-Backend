@@ -87,7 +87,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(browserOriginProperties.getAllowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("X-CSRF-ERROR"));
+        config.setExposedHeaders(List.of("X-CSRF-ERROR", "Retry-After"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
