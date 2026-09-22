@@ -49,7 +49,15 @@ public class AgentProposalParser {
             throw new AgentParseException("LLM response is not valid JSON: " + e.getMessage());
         }
 
+        rejectRedactionMarkers(root);
         return mapToDTO(root);
+    }
+
+    private void rejectRedactionMarkers(JsonNode node) {
+        if (node.isTextual() && node.asText().contains(AiSecretRedactor.REDACTED)) {
+            throw new AgentParseException("Proposal contains redacted secret text; exclude those lines and retry");
+        }
+        if (node.isContainerNode()) node.forEach(this::rejectRedactionMarkers);
     }
 
     private String extractJson(String text) {

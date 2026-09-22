@@ -16,6 +16,7 @@ import com.dinukaly.velo.service.CodeChunkerService;
 import com.dinukaly.velo.service.EmbeddingProviderService;
 import com.dinukaly.velo.service.IndexManagementService;
 import com.dinukaly.velo.util.FilePathResolver;
+import com.dinukaly.velo.util.AiSecretRedactor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -125,7 +126,7 @@ public class IndexManagementServiceImpl implements IndexManagementService {
 
             for (Path filePath : filesToIndex) {
                 try {
-                    String content = Files.readString(filePath);
+                    String content = AiSecretRedactor.redact(Files.readString(filePath));
                     String relPath = root.relativize(filePath).toString().replace("\\", "/");
                     List<CodeChunkDocument> chunks = codeChunkerService.chunkFile(projectId, relPath, content);
 
@@ -193,7 +194,7 @@ public class IndexManagementServiceImpl implements IndexManagementService {
             codeChunkRepository.deleteByProjectIdAndPath(projectId.toString(), relativePath);
 
             if (Files.exists(filePath) && Files.isRegularFile(filePath) && Files.size(filePath) <= MAX_FILE_SIZE_BYTES) {
-                String content = Files.readString(filePath);
+                String content = AiSecretRedactor.redact(Files.readString(filePath));
                 List<CodeChunkDocument> chunks = codeChunkerService.chunkFile(projectId, relativePath, content);
                 if (!chunks.isEmpty()) {
                     codeChunkRepository.saveAll(chunks);
