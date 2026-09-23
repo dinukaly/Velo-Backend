@@ -20,6 +20,25 @@ public record AiPrompt(String systemInstructions, String request, List<Context> 
 
     public record Context(String source, String path, String content) {}
 
+    public String boundedUserContent(int maxCharacters, int maxContextItems) {
+        if (context.size() > maxContextItems) throw new com.dinukaly.velo.exception.AiBudgetExceededException();
+        // Check raw fields before redaction/serialization, including content that redaction would shrink.
+        long rawSize = length(systemInstructions) + length(request);
+        for (Context item : context) {
+            rawSize += length(item.source()) + length(item.path()) + length(item.content());
+            if (rawSize > maxCharacters) throw new com.dinukaly.velo.exception.AiBudgetExceededException();
+        }
+        if (rawSize > maxCharacters) throw new com.dinukaly.velo.exception.AiBudgetExceededException();
+        String encoded = userContent();
+        // JSON escaping and metadata count too. Reject, never truncate structured context.
+        if (length(systemInstructions) + length(encoded) > maxCharacters) {
+            throw new com.dinukaly.velo.exception.AiBudgetExceededException();
+        }
+        return encoded;
+    }
+
+    private static long length(String value) { return value == null ? 0L : value.length(); }
+
     public String userContent() {
         // Redact individual fields BEFORE encoding: secrets cannot break the JSON structure.
         var safeContext = context.stream().map(item -> Map.of(

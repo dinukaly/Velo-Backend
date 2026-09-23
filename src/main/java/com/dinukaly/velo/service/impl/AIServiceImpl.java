@@ -1,6 +1,8 @@
 package com.dinukaly.velo.service.impl;
 import com.dinukaly.velo.service.AIService;
 import com.dinukaly.velo.util.AiPrompt;
+import com.dinukaly.velo.config.AiBudgetProperties;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -12,15 +14,17 @@ import org.springframework.stereotype.Service;
 public class AIServiceImpl implements AIService {
 
     private final ChatClient chatClient;
+    private final AiBudgetProperties budget;
 
     @Override
     public String chat(AiPrompt prompt) {
-        String userContent = prompt.userContent();
+        String userContent = prompt.boundedUserContent(budget.getMaxPromptCharacters(), budget.getMaxContextItems());
         log.debug("Sending prompt to AI model ({} chars)", userContent.length());
 
         String response = chatClient.prompt()
                 .system(prompt.systemInstructions())
                 .user(userContent)
+                .options(OpenAiChatOptions.builder().maxTokens(budget.getMaxCompletionTokens()).build())
                 .call()
                 .content();
 

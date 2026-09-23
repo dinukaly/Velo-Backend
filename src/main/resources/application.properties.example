@@ -59,7 +59,9 @@ docker.host=${DOCKER_HOST:npipe:////./pipe/docker_engine}
 # --- AI Module Configuration ---
 velo.ai.enabled=true
 velo.ai.model=openrouter/free
-velo.ai.max-prompt-characters=12000
+velo.ai.max-prompt-characters=${AI_MAX_PROMPT_CHARACTERS:12000}
+velo.ai.max-completion-tokens=${AI_MAX_COMPLETION_TOKENS:4096}
+velo.ai.max-context-items=${AI_MAX_CONTEXT_ITEMS:100}
 velo.ai.max-tool-iterations=6
 velo.ai.max-tool-result-characters=12000
 

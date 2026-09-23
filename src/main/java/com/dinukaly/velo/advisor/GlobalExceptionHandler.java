@@ -27,6 +27,12 @@ import com.dinukaly.velo.exception.EmailNotVerifiedException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.dinukaly.velo.exception.AiBudgetExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public APIResponse handleAiBudgetExceeded(com.dinukaly.velo.exception.AiBudgetExceededException ex) {
+        return new APIResponse(413, ex.getMessage(), null);
+    }
+
     //username password not found
     @ExceptionHandler(UsernameNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
