@@ -127,7 +127,7 @@ public class AgentExecutionServiceImpl implements AgentExecutionService {
             );
 
             log.debug("[AgentExec] Sending structured context to LLM");
-            String llmOutput = aiService.chat(prompt);
+            String llmOutput = aiService.chat(prompt, userEmail);
             log.debug("[AgentExec] LLM responded ({} chars)", llmOutput != null ? llmOutput.length() : 0);
 
             completeStep(run, generateStep, "LLM response received, parsing proposal");

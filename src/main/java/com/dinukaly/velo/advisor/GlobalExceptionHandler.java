@@ -27,6 +27,22 @@ import com.dinukaly.velo.exception.EmailNotVerifiedException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.dinukaly.velo.exception.AiCallBusyException.class)
+    public org.springframework.http.ResponseEntity<APIResponse> handleAiCallBusy(
+            com.dinukaly.velo.exception.AiCallBusyException ex) {
+        return org.springframework.http.ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Long.toString(ex.getRetrySeconds()))
+                .body(new APIResponse(429, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(com.dinukaly.velo.exception.AiCallUnavailableException.class)
+    public org.springframework.http.ResponseEntity<APIResponse> handleAiCallUnavailable(
+            com.dinukaly.velo.exception.AiCallUnavailableException ex) {
+        return org.springframework.http.ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("Retry-After", "5")
+                .body(new APIResponse(503, ex.getMessage(), null));
+    }
+
     @ExceptionHandler(com.dinukaly.velo.exception.AiBudgetExceededException.class)
     @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
     public APIResponse handleAiBudgetExceeded(com.dinukaly.velo.exception.AiBudgetExceededException ex) {

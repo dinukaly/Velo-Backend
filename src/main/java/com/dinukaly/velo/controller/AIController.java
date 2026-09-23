@@ -46,7 +46,7 @@ public class AIController {
                 request.getHistory()
         );
 
-        String aiReply = aiService.chat(prompt);
+        String aiReply = aiService.chat(prompt, userDetails.getUsername());
 
         return ResponseEntity.ok(new APIResponse(
                 200,

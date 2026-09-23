@@ -43,8 +43,12 @@ public class ExpensiveRequestLimiter {
     }
 
     static String key(String account) {
+        return "velo:expensive-requests:v1:" + accountDigest(account);
+    }
+
+    static String accountDigest(String account) {
         try {
-            return "velo:expensive-requests:v1:" + HexFormat.of().formatHex(
+            return HexFormat.of().formatHex(
                     MessageDigest.getInstance("SHA-256").digest(account.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("Required digest unavailable");

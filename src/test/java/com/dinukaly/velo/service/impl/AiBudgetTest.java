@@ -15,6 +15,32 @@ import static org.mockito.Mockito.*;
 
 class AiBudgetTest {
     @Test
+    void busyAccountNeverCallsProvider() {
+        var client = mock(ChatClient.class);
+        var limiter = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.class);
+        when(limiter.acquire("account")).thenThrow(new com.dinukaly.velo.exception.AiCallBusyException(3));
+        var service = new AIServiceImpl(client, new AiBudgetProperties(), limiter);
+        assertThrows(com.dinukaly.velo.exception.AiCallBusyException.class,
+                () -> service.chat(new AiPrompt("system", "task", List.of()), "account"));
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void modelFailureStillReleasesLease() {
+        var client = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        var limiter = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.class);
+        var lease = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.Lease.class);
+        when(limiter.acquire("account")).thenReturn(lease);
+        var prompt = new AiPrompt("system", "task", List.of());
+        when(client.prompt().system("system").user(prompt.userContent())
+                .options(any(OpenAiChatOptions.class)).call())
+                .thenThrow(new IllegalStateException("provider failed"));
+        var service = new AIServiceImpl(client, new AiBudgetProperties(), limiter);
+        assertThrows(IllegalStateException.class, () -> service.chat(prompt, "account"));
+        verify(lease).close();
+    }
+
+    @Test
     void encodedBoundaryIncludesSystemAndAcceptsExactlyTheLimit() {
         var prompt = new AiPrompt("system", "task", List.of());
         int size = prompt.systemInstructions().length() + prompt.userContent().length();
@@ -45,12 +71,14 @@ class AiBudgetTest {
     @Test
     void oversizedChatAndAgentInputsNeverReachProvider() {
         var client = mock(ChatClient.class);
-        var service = new AIServiceImpl(client, new AiBudgetProperties());
+        var limiter = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.class);
+        var service = new AIServiceImpl(client, new AiBudgetProperties(), limiter);
         var chat = new PromptBuilder().buildPrompt("x".repeat(12001), null, null, null, null);
         var agent = new AgentPromptBuilder().buildPrompt("fix", "src/App.java", "x".repeat(12001), null, null);
-        assertThrows(AiBudgetExceededException.class, () -> service.chat(chat));
-        assertThrows(AiBudgetExceededException.class, () -> service.chat(agent));
+        assertThrows(AiBudgetExceededException.class, () -> service.chat(chat, "account"));
+        assertThrows(AiBudgetExceededException.class, () -> service.chat(agent, "account"));
         verifyNoInteractions(client);
+        verifyNoInteractions(limiter);
     }
 
     @Test
@@ -59,7 +87,10 @@ class AiBudgetTest {
         var properties = new AiBudgetProperties();
         properties.setMaxCompletionTokens(256);
         var prompt = new AiPrompt("system", "task", List.of());
-        new AIServiceImpl(client, properties).chat(prompt);
+        var limiter = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.class);
+        var lease = mock(com.dinukaly.velo.security.AiCallConcurrencyLimiter.Lease.class);
+        when(limiter.acquire("account")).thenReturn(lease);
+        new AIServiceImpl(client, properties, limiter).chat(prompt, "account");
         var options = ArgumentCaptor.forClass(OpenAiChatOptions.class);
         verify(client.prompt().system("system").user(prompt.userContent())).options(options.capture());
         assertEquals(256, options.getValue().getMaxTokens());
