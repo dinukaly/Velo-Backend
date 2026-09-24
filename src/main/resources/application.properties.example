@@ -10,6 +10,16 @@
 
 spring.application.name=velo
 
+# Agent SSE capacity and terminal-history retention.
+agent.sse.max-subscribers-per-run=${AGENT_SSE_MAX_PER_RUN:3}
+agent.sse.max-subscribers-per-instance=${AGENT_SSE_MAX_PER_INSTANCE:100}
+agent.sse.max-replay-events=${AGENT_SSE_MAX_REPLAY_EVENTS:100}
+agent.sse.max-event-payload-characters=${AGENT_SSE_MAX_EVENT_PAYLOAD_CHARACTERS:16000}
+agent.sse.event-retention-days=${AGENT_SSE_EVENT_RETENTION_DAYS:30}
+agent.sse.terminal-run-retention-days=${AGENT_SSE_RUN_RETENTION_DAYS:90}
+agent.sse.cleanup-initial-delay-ms=60000
+agent.sse.cleanup-interval-ms=300000
+
 # Shared per-account admission budget across expensive HTTP endpoints (requires Redis).
 security.expensive-requests.limit=${EXPENSIVE_REQUEST_LIMIT:20}
 security.expensive-requests.window-seconds=${EXPENSIVE_REQUEST_WINDOW_SECONDS:60}

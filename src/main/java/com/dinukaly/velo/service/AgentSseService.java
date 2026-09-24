@@ -10,11 +10,11 @@ public interface AgentSseService {
 
     /**
      * Registers a new SSE emitter for the given run and user.
-     * If lastEventId is provided, replays any missed events first.
+     * Replays a bounded recent window; older gaps trigger a replay.reset control event.
      *
      * @param runId       the run to subscribe to
      * @param userEmail   the authenticated user (used to validate ownership)
-     * @param lastEventId the last sequence number the client received (0 = no replay needed)
+     * @param lastEventId the last sequence number the client received (0 = initial connection)
      * @return a configured SseEmitter
      */
     SseEmitter subscribe(UUID runId, String userEmail, long lastEventId);

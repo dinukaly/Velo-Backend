@@ -27,6 +27,14 @@ import com.dinukaly.velo.exception.EmailNotVerifiedException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.dinukaly.velo.exception.AgentSseCapacityException.class)
+    public org.springframework.http.ResponseEntity<APIResponse> handleAgentSseCapacity(
+            com.dinukaly.velo.exception.AgentSseCapacityException ex) {
+        return org.springframework.http.ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", "5")
+                .body(new APIResponse(429, ex.getMessage(), null));
+    }
+
     @ExceptionHandler(com.dinukaly.velo.exception.AiCallBusyException.class)
     public org.springframework.http.ResponseEntity<APIResponse> handleAiCallBusy(
             com.dinukaly.velo.exception.AiCallBusyException ex) {

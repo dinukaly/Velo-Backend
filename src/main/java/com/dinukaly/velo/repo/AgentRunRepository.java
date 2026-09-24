@@ -15,6 +15,8 @@ import java.util.UUID;
 
 @Repository
 public interface AgentRunRepository extends JpaRepository<AgentRun, UUID> {
+    List<AgentRun> findTop100ByStatusInAndCompletedAtBeforeOrderByCompletedAtAsc(
+            List<AgentRunStatus> statuses, java.time.Instant cutoff);
 
     List<AgentRun> findByProjectOrderByCreatedAtDesc(Project project);
 

@@ -12,6 +12,9 @@ import java.util.UUID;
 
 @Repository
 public interface AgentStepRepository extends JpaRepository<AgentStep, UUID> {
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM AgentStep s WHERE s.run = :run")
+    int deleteByRun(@org.springframework.data.repository.query.Param("run") AgentRun run);
 
     List<AgentStep> findByRunOrderBySequenceAsc(AgentRun run);
 
