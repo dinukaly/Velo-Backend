@@ -49,7 +49,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         if (projectSession.isPresent()) {
             SandboxSession sandboxSession = projectSession.get();
 
-            if (sandboxService.isContainerAvailable(sandboxSession.getContainerId())) {
+            boolean reusable;
+            try {
+                reusable = sandboxService.isContainerAvailable(sandboxSession.getContainerId());
+            } catch (SecurityException incompatibleSandbox) {
+                // Sandboxes created before the current isolation policy cannot be reused.
+                // Remove the old container before replacing its session; the workspace is bind-mounted.
+                log.info("Replacing sandbox with outdated security settings for project {}", projectId);
+                sandboxService.stopContainer(sandboxSession.getContainerId());
+                reusable = false;
+            }
+
+            if (reusable) {
                 log.info("Reusing existing container {} for project {}",
                         sandboxSession.getContainerId(), projectId);
 
@@ -62,6 +73,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                 log.info("Container {} is no longer available. Recreating for project {}",
                         sandboxSession.getContainerId(), projectId);
                 sandboxRepository.delete(sandboxSession);
+                sandboxRepository.flush();
             }
         }
 
