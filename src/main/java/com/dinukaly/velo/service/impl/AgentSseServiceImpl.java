@@ -100,7 +100,6 @@ public class AgentSseServiceImpl implements AgentSseService {
             subscriber.finishReplay(snapshot);
         } catch (RuntimeException ex) {
             removeEmitter(subscriber);
-            emitter.completeWithError(ex);
             throw ex;
         }
 
@@ -190,7 +189,12 @@ public class AgentSseServiceImpl implements AgentSseService {
                     .id(String.valueOf(sequence))
                     .name(eventType)
                     .data(payload));
-        } catch (IOException | IllegalStateException ex) {
+        } catch (IOException ex) {
+            log.warn("Failed to send SSE event [{}] to emitter: {}", eventType, ex.getMessage());
+            removeEmitter(subscriber);
+            // Spring MVC handles a failed send via the container's async error dispatch.
+            // Completing with the same error here would dispatch it a second time.
+        } catch (IllegalStateException ex) {
             log.warn("Failed to send SSE event [{}] to emitter: {}", eventType, ex.getMessage());
             removeEmitter(subscriber);
             subscriber.emitter.completeWithError(ex);

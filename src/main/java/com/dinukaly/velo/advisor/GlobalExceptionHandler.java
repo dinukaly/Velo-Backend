@@ -2,10 +2,12 @@ package com.dinukaly.velo.advisor;
 
 import com.dinukaly.velo.dto.APIResponse;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -87,7 +89,8 @@ public class GlobalExceptionHandler {
     // Exception Handler for file system errors
     @ExceptionHandler(UncheckedIOException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public APIResponse handleUncheckedIOException(UncheckedIOException ex) {
+    public APIResponse handleUncheckedIOException(UncheckedIOException ex, HttpServletResponse response) {
+        if (isStreamingOrCommitted(response)) return null;
         return new APIResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "File system operation failed",
@@ -98,7 +101,8 @@ public class GlobalExceptionHandler {
     // Exception Handler for general I/O errors
     @ExceptionHandler(java.io.IOException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public APIResponse handleIOException(java.io.IOException ex) {
+    public APIResponse handleIOException(java.io.IOException ex, HttpServletResponse response) {
+        if (isStreamingOrCommitted(response)) return null;
         return new APIResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "I/O operation failed",
@@ -146,13 +150,23 @@ public class GlobalExceptionHandler {
     // Exception Handler for all other exceptions
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public APIResponse handleAllExceptions(Exception ex) {
+    public APIResponse handleAllExceptions(Exception ex, HttpServletResponse response) {
+        if (isStreamingOrCommitted(response)) {
+            log.debug("Streaming response ended with error: {}", ex.toString());
+            return null;
+        }
         log.error("[GlobalError] Unhandled exception occurred: ", ex);
         return new APIResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal server error",
                 ex.getMessage()
         );
+    }
+
+    private boolean isStreamingOrCommitted(HttpServletResponse response) {
+        String contentType = response.getContentType();
+        return response.isCommitted() || (contentType != null
+                && contentType.startsWith(MediaType.TEXT_EVENT_STREAM_VALUE));
     }
 
     // Exception Handler for custom not found
