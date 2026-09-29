@@ -13,15 +13,11 @@ import com.dinukaly.velo.repo.ProjectRepository;
 import com.dinukaly.velo.repo.SandboxRepository;
 import com.dinukaly.velo.repo.UserRepository;
 import com.dinukaly.velo.service.AdminService;
-import com.dinukaly.velo.service.FileStorageService;
-import com.dinukaly.velo.service.SandboxService;
-import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -34,9 +30,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final SandboxRepository sandboxRepository;
-    private final SandboxService sandboxService;
-    private final FileStorageService fileStorageService;
-    private final FilePathResolver filePathResolver;
+    private final ProjectDeletionService projectDeletionService;
 
     @Override
     public AdminStatsDTO getStats() {
@@ -104,14 +98,7 @@ public class AdminServiceImpl implements AdminService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new NotFoundException("Project not found"));
 
-        sandboxRepository.findByProject(project).ifPresent(session -> {
-            sandboxService.stopContainer(session.getContainerId());
-            sandboxRepository.delete(session);
-        });
-
-        Path workspacePath = filePathResolver.getProjectWorkspacePath(project);
-        fileStorageService.delete(workspacePath);
-        projectRepository.delete(project);
+        projectDeletionService.delete(project);
         log.info("[Admin] Project {} deleted", projectId);
     }
 

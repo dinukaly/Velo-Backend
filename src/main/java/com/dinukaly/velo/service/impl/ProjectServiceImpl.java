@@ -8,7 +8,6 @@ import com.dinukaly.velo.repo.ProjectRepository;
 import com.dinukaly.velo.repo.UserRepository;
 import com.dinukaly.velo.service.FileStorageService;
 import com.dinukaly.velo.service.ProjectService;
-import com.dinukaly.velo.service.EnvironmentService;
 import com.dinukaly.velo.util.FilePathResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ModelMapper modelMapper;
     private final FileStorageService fileStorageService;
     private final FilePathResolver filePathResolver;
-    private final EnvironmentService environmentService;
+    private final ProjectDeletionService projectDeletionService;
 
     @Override
     @Transactional
@@ -80,15 +79,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findByIdAndOwner(projectId, user)
                 .orElseThrow(() -> new NotFoundException("Project not found"));
 
-        // stop environment first
-        environmentService.closeEnvironment(projectId, email);
-
-        // delete workspace
-        Path workspacePath = filePathResolver.getProjectWorkspacePath(project);
-        fileStorageService.delete(workspacePath);
-
-        // delete project
-        projectRepository.delete(project);
+        projectDeletionService.delete(project);
 
         log.info("Project [{}] deleted", projectId);
     }
