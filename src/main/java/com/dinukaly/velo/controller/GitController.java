@@ -18,7 +18,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/git/{projectId}")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class GitController {
 
     private final GitService gitService;

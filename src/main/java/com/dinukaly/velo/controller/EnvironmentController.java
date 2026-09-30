@@ -13,7 +13,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/environment")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class EnvironmentController {
 
     private final EnvironmentService environmentService;
@@ -22,6 +21,7 @@ public class EnvironmentController {
      * POST /api/v1/environment/open/{projectId}
      */
     @PostMapping("/open/{projectId}")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> openEnvironment(
             @PathVariable UUID projectId,
             @AuthenticationPrincipal UserDetails userDetails) {

@@ -9,7 +9,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "agent_events", indexes = {
         @Index(name = "idx_agent_events_run", columnList = "run_id"),
-        @Index(name = "idx_agent_events_run_seq", columnList = "run_id, sequence")
+        @Index(name = "idx_agent_events_run_seq", columnList = "run_id, sequence"),
+        @Index(name = "idx_agent_events_created_at", columnList = "created_at")
 })
 @Getter
 @Setter

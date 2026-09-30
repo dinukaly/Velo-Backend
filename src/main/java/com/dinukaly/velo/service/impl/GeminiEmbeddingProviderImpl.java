@@ -1,6 +1,7 @@
 package com.dinukaly.velo.service.impl;
 
 import com.dinukaly.velo.config.EmbeddingProperties;
+import com.dinukaly.velo.util.AiSecretRedactor;
 import com.dinukaly.velo.service.EmbeddingProviderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.MetadataMode;
@@ -64,7 +65,7 @@ public class GeminiEmbeddingProviderImpl implements EmbeddingProviderService {
 
         try {
             OpenAiEmbeddingModel model = getOrCreateModel();
-            var response = model.embedForResponse(java.util.List.of(text));
+            var response = model.embedForResponse(java.util.List.of(AiSecretRedactor.redact(text)));
 
             if (response == null || response.getResults() == null || response.getResults().isEmpty()) {
                 log.warn("[Embedding] Empty response from Gemini embedding API");
@@ -75,7 +76,7 @@ public class GeminiEmbeddingProviderImpl implements EmbeddingProviderService {
             return Optional.of(vector);
 
         } catch (Exception e) {
-            log.warn("[Embedding] Embedding call failed, falling back to BM25-only indexing: {}", e.getMessage());
+            log.warn("[Embedding] Embedding call failed, falling back to BM25-only indexing");
             return Optional.empty();
         }
     }

@@ -12,7 +12,8 @@ import java.util.UUID;
 @Table(name = "agent_runs", indexes = {
         @Index(name = "idx_agent_runs_project", columnList = "project_id"),
         @Index(name = "idx_agent_runs_user", columnList = "user_id"),
-        @Index(name = "idx_agent_runs_status", columnList = "status")
+        @Index(name = "idx_agent_runs_status", columnList = "status"),
+        @Index(name = "idx_agent_runs_status_completed", columnList = "status, completed_at")
 })
 @Getter
 @Setter

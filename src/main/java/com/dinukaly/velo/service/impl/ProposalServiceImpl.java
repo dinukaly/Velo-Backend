@@ -94,6 +94,7 @@ public class ProposalServiceImpl implements ProposalService {
 
         for (CreateProposalRequestDTO.FileChangeRequest fileReq : request.getFiles()) {
             String filePath = normalizeProjectPath(fileReq.getFilePath());
+            validateProposalTarget(workspaceRoot, filePath, fileReq.getChangeType());
 
             AgentProposalFile proposalFile = AgentProposalFile.builder()
                     .proposal(proposal)
@@ -338,6 +339,25 @@ public class ProposalServiceImpl implements ProposalService {
     private String normalizeProjectPath(String path) {
         if (path == null) return null;
         return path.replace("\\", "/").replaceAll("^/+", "");
+    }
+
+    private void validateProposalTarget(Path workspaceRoot, String relativePath, FileChangeType changeType) {
+        if (relativePath == null || relativePath.isBlank() || changeType == null) {
+            throw new BadRequestException("Proposal file path and change type are required");
+        }
+        Path root = workspaceRoot.toAbsolutePath().normalize();
+        Path target = root.resolve(relativePath).normalize();
+        if (!target.startsWith(root)) {
+            throw new BadRequestException("Proposal path escapes project workspace: " + relativePath);
+        }
+        if (changeType == FileChangeType.CREATE) {
+            if (Files.exists(target)) {
+                throw new BadRequestException("CREATE target already exists: " + relativePath);
+            }
+        } else if (!Files.isRegularFile(target)) {
+            throw new BadRequestException("Agent proposed a missing project file: " + relativePath
+                    + ". Regenerate the proposal using an existing file path.");
+        }
     }
 
     private int lineCount(String content) {

@@ -229,6 +229,9 @@ public class SafeApplyServiceImpl implements SafeApplyService {
         }
 
         Path target = resolveAndGuard(workspaceRoot, relPath);
+        if (Files.exists(target)) {
+            throw new ConflictException("CREATE target already exists on disk: " + relPath);
+        }
         Files.createDirectories(target.getParent());
         Path stageFile = stagePath(target);
         Files.writeString(stageFile, newContent, java.nio.charset.StandardCharsets.UTF_8);

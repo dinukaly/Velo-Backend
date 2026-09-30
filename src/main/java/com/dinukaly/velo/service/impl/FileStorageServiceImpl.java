@@ -9,11 +9,39 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.FileVisitResult;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class FileStorageServiceImpl implements FileStorageService {
+
+    @Override
+    public void deleteProjectWorkspace(Path projectPath) {
+        if (!Files.exists(projectPath, LinkOption.NOFOLLOW_LINKS)) return;
+        try {
+            // walkFileTree does not follow symbolic links outside the workspace.
+            Files.walkFileTree(projectPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path directory, IOException error) throws IOException {
+                    if (error != null) throw error;
+                    Files.delete(directory);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException error) {
+            throw new UncheckedIOException("Could not delete project workspace: " + projectPath, error);
+        }
+    }
 
     @Override
     public void createProjectWorkspace(Path projectPath) {

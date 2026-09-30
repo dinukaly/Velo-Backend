@@ -22,7 +22,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/ai/agent")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 @Slf4j
 public class AgentController {
 
@@ -39,6 +38,7 @@ public class AgentController {
     // -------------------------------------------------------------------------
 
     @PostMapping("/runs")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> createRun(
             @Valid @RequestBody CreateAgentRunRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -160,6 +160,7 @@ public class AgentController {
     }
 
     @GetMapping("/tools/search-code")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> searchCode(
             @RequestParam UUID projectId,
             @RequestParam String query,
@@ -174,6 +175,7 @@ public class AgentController {
      * Falls back to BM25-only or filesystem search when ES or embeddings are unavailable.
      */
     @GetMapping("/tools/hybrid-search")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> hybridSearch(
             @RequestParam UUID projectId,
             @RequestParam String query,
@@ -209,6 +211,7 @@ public class AgentController {
     // -------------------------------------------------------------------------
 
     @PostMapping("/projects/{projectId}/index")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> indexProject(
             @PathVariable UUID projectId,
             @RequestParam(defaultValue = "INCREMENTAL") String mode,

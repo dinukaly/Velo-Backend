@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 @Slf4j
 public class AIController {
 
@@ -26,6 +25,7 @@ public class AIController {
     private final PromptBuilder promptBuilder;
 
     @PostMapping("/chat")
+    @com.dinukaly.velo.security.ExpensiveRequest
     public ResponseEntity<APIResponse> chat(
             @Valid @RequestBody AIRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -38,7 +38,7 @@ public class AIController {
                 userDetails.getUsername()
         );
 
-        String prompt = promptBuilder.buildPrompt(
+        var prompt = promptBuilder.buildPrompt(
                 request.getMessage(),
                 fileContent,
                 request.getSelectedCode(),
@@ -46,7 +46,7 @@ public class AIController {
                 request.getHistory()
         );
 
-        String aiReply = aiService.chat(prompt);
+        String aiReply = aiService.chat(prompt, userDetails.getUsername());
 
         return ResponseEntity.ok(new APIResponse(
                 200,

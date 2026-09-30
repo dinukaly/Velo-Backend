@@ -27,7 +27,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.regex.Pattern;
+import com.dinukaly.velo.util.AiProtectedPaths;
 import java.util.stream.Collectors;
 
 /**
@@ -61,20 +61,6 @@ public class AgentToolServiceImpl implements AgentToolService {
      */
     private static final Set<String> EXCLUDED_DIRECTORIES = Set.of(
             ".git", "node_modules", "dist", "build", "target", "coverage", ".next", "out", "vendor"
-    );
-
-    /**
-     * Regular expression patterns matching sensitive files that the AI model must not read.
-     */
-    private static final List<Pattern> SENSITIVE_FILE_PATTERNS = List.of(
-            Pattern.compile("^\\.env(\\..*)?$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.pem$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.key$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.p12$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile(".*\\.jks$", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^credentials.*", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^secrets.*", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("^\\.ssh.*", Pattern.CASE_INSENSITIVE)
     );
 
     private final FsService fsService;
@@ -298,14 +284,7 @@ public class AgentToolServiceImpl implements AgentToolService {
      * Tests a path string against sensitive file regex patterns.
      */
     private boolean isSensitive(String pathOrName) {
-        if (pathOrName == null) return false;
-        String clean = pathOrName.replace("\\", "/");
-        for (Pattern pattern : SENSITIVE_FILE_PATTERNS) {
-            if (pattern.matcher(clean).matches() || pattern.matcher(Paths.get(clean).getFileName().toString()).matches()) {
-                return true;
-            }
-        }
-        return false;
+        return AiProtectedPaths.isProtected(pathOrName);
     }
 
     /**

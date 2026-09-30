@@ -16,4 +16,5 @@ public interface SandboxRepository extends JpaRepository<SandboxSession, UUID> {
     Optional<SandboxSession> findByProject(Project project);
 
     boolean existsByUser(User user);
+    boolean existsByContainerId(String containerId);
 }

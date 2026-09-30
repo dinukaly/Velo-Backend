@@ -4,6 +4,7 @@ import java.nio.file.Path;
 
 public interface FileStorageService {
     void createProjectWorkspace(Path projectPath);
+    void deleteProjectWorkspace(Path projectPath);
     void createFile(Path path);
     void createFolder(Path path);
     void delete(Path path);

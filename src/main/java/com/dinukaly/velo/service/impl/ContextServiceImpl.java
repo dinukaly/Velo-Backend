@@ -52,7 +52,7 @@ public class ContextServiceImpl implements ContextService {
         Path root = filePathResolver.getProjectWorkspacePath(project);
         Path resolvedPath = resolveAndValidate(root, filePath);
 
-        if (isIgnored(filePath)) {
+        if (isIgnored(filePath) || com.dinukaly.velo.util.AiProtectedPaths.isProtected(filePath)) {
             log.warn("[AI Context] Ignored path requested for project {}: {}", projectId, filePath);
             return "";
         }

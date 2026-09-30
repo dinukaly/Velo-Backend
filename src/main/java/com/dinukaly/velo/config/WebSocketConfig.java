@@ -14,12 +14,14 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final TerminalWebSocketHandler terminalWebSocketHandler;
+    private final BrowserOriginProperties browserOriginProperties;
+    private final BrowserOriginHandshakeInterceptor browserOriginHandshakeInterceptor;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry
                 .addHandler(terminalWebSocketHandler, "/api/projects/*/terminal")
-                .addInterceptors(new AuthHandshakeInterceptor())
-                .setAllowedOriginPatterns("*");     // CORS — restrict in production
+                .addInterceptors(browserOriginHandshakeInterceptor, new AuthHandshakeInterceptor())
+                .setAllowedOrigins(browserOriginProperties.getAllowedOrigins().toArray(String[]::new));
     }
 }
